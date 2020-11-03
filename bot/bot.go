@@ -76,8 +76,16 @@ func (b *Bot) handleCommand(cmd tgbotapi.Update) {
 
 func (b *Bot) start(msg tgbotapi.Update) {
 
-	b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
-	b.persistChatIDs()
+	inList := false
+	for _, id := range b.chatIDs {
+		if id == msg.Message.Chat.ID {
+			inList = true
+		}
+	}
+	if !inList {
+		b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
+		b.persistChatIDs()
+	}
 	message := fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
 	b.Send(msg.Message.Chat.ID, message)
 

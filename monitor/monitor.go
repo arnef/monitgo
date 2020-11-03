@@ -13,12 +13,14 @@ type Status struct {
 	Name  string
 	Error string
 	Data  []docker.Stats
+	host  string
 }
 
-func GetStatus() []Status {
+func GetStatus() map[string]Status {
 	config := config.Get()
 	stati := make([]Status, len(config.Nodes))
 	for i, node := range config.Nodes {
+		stati[i].host = node.Host
 		stati[i].Name = node.Name
 		url := fmt.Sprintf("http://%s:%d/stats", node.Host, node.Port)
 		resp, err := http.Get(url)
@@ -46,5 +48,9 @@ func GetStatus() []Status {
 			}
 		}
 	}
-	return stati
+	result := make(map[string]Status)
+	for _, s := range stati {
+		result[s.host] = s
+	}
+	return result
 }

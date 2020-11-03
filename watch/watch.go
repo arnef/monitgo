@@ -50,8 +50,34 @@ func (w *watcher) run() {
 	}
 	response := string(resp)
 	if response != w.lastResponse {
+		var lastResponse map[string]monitor.Status
+		json.Unmarshal([]byte(w.lastResponse), &lastResponse)
 		message := ""
-		for _, s := range stats {
+		for i, s := range stats {
+			if prev, ok := lastResponse[i]; ok {
+				if prev.Error != "" && s.Error == "" {
+					message += fmt.Sprintf("✅ *%s*\nresolved: _%s_\n", s.Name, prev.Error)
+				}
+				if len(prev.Data) > 0 {
+					resolved := ""
+					for _, i := range prev.Data {
+						errorResolved := true
+						for _, i2 := range s.Data {
+							if i.ID == i2.ID {
+								errorResolved = false
+							}
+						}
+						if errorResolved {
+							resolved += fmt.Sprintf("_%s_ up again\n", i.Name)
+
+						}
+					}
+					if resolved != "" {
+						message += fmt.Sprintf("🚀 *%s*\n%s", s.Name, resolved)
+					}
+				}
+				message += "\n"
+			}
 			// something is wrong lets fire a telegram message
 			if s.Error != "" {
 				message += fmt.Sprintf("❗️ *%s*\n_%s_", s.Name, s.Error)
