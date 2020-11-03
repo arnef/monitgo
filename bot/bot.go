@@ -83,7 +83,7 @@ func (b *Bot) status(msg tgbotapi.Update) {
 				message += fmt.Sprintf("_%s_ down\n", d.Name)
 			}
 		} else {
-			message += fmt.Sprintf("✅️ *%s*", s.Name)
+			message += fmt.Sprintf("✅️ *%s*\n", s.Name)
 		}
 	}
 	b.Send(msg.Message.Chat.ID, message)
