@@ -6,16 +6,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"git.arnef.de/monitgo/config"
 	"git.arnef.de/monitgo/monitor"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/hako/durafmt"
 )
 
 type Bot struct {
-	chatIDs []int64
-	api     *tgbotapi.BotAPI
-	config  config.Config
+	chatIDs   []int64
+	api       *tgbotapi.BotAPI
+	config    config.Config
+	startTime time.Time
 }
 
 func New(config config.Config) Bot {
@@ -24,9 +27,10 @@ func New(config config.Config) Bot {
 		panic(err)
 	}
 	bot := Bot{
-		api:     api,
-		chatIDs: []int64{},
-		config:  config,
+		api:       api,
+		chatIDs:   []int64{},
+		config:    config,
+		startTime: time.Now(),
 	}
 	bot.restoreChatIDs()
 	return bot
@@ -36,6 +40,19 @@ func (b *Bot) Send(chatID int64, message string) {
 	msg := tgbotapi.NewMessage(chatID, message)
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	b.api.Send(msg)
+}
+
+func (b *Bot) asyncSend(chatID int64, callable func() string) {
+	msg := tgbotapi.NewMessage(chatID, "⏳")
+	m, err := b.api.Send(msg)
+	if err == nil {
+
+		newMsg := tgbotapi.NewEditMessageText(chatID, m.MessageID, callable())
+		newMsg.ParseMode = tgbotapi.ModeMarkdown
+		b.api.Send(newMsg)
+	} else {
+		// TODO err message
+	}
 }
 
 func (b *Bot) Broadcast(message string) {
@@ -157,21 +174,24 @@ func (b *Bot) restoreChatIDs() {
 }
 
 func (b *Bot) status(msg tgbotapi.Update) {
-	status := monitor.GetStatus(b.config.Nodes)
-	message := ""
-	for _, s := range status {
-		if s.Error != "" {
-			message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
-		} else if len(s.Data) > 0 {
-			message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
-			for _, d := range s.Data {
-				message += fmt.Sprintf("_%s_ down\n", d.Name)
+	b.asyncSend(msg.Message.Chat.ID, func() string {
+		status := monitor.GetStatus(b.config.Nodes)
+		message := ""
+		for _, s := range status {
+			if s.Error != "" {
+				message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
+			} else if len(s.Data) > 0 {
+				message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
+				for _, d := range s.Data {
+					message += fmt.Sprintf("_%s_ down\n", d.Name)
+				}
+			} else {
+				message += fmt.Sprintf("✅️ *%s*\n", s.Name)
 			}
-		} else {
-			message += fmt.Sprintf("✅️ *%s*\n", s.Name)
 		}
-	}
-	b.Send(msg.Message.Chat.ID, message)
+		uptime := durafmt.ParseShort(time.Since(b.startTime))
+		return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNodes:\n%s", uptime, message)
+	})
 }
 
 func (b *Bot) help(msg tgbotapi.Update) {
