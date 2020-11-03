@@ -6,11 +6,12 @@ import (
 
 	"git.arnef.de/monitgo/bot"
 	"git.arnef.de/monitgo/node"
+	"git.arnef.de/monitgo/watch"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	(&cli.App{
+	err := (&cli.App{
 		Version: "0.1.0",
 		Name:    "monit",
 		Usage:   "Monitoring Docker",
@@ -31,18 +32,16 @@ func main() {
 				Action: node.Cmd,
 			},
 			{
-				Name:  "monitor",
+				Name:  "watch",
 				Usage: "",
-				Action: func(ctx *cli.Context) error {
-
-					// status := monitor.GetStatus()
-
-					// fmt.Println(status)
-					// bot := bot.New()
-					// bot.Send(status)
-					return fmt.Errorf("Not implemented")
-
+				Flags: []cli.Flag{
+					&cli.UintFlag{
+						Name:    "interval",
+						Aliases: []string{"n"},
+						Value:   60,
+					},
 				},
+				Action: watch.Cmd,
 			},
 			{
 				Name:   "bot",
@@ -51,4 +50,9 @@ func main() {
 			},
 		},
 	}).Run(os.Args)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
