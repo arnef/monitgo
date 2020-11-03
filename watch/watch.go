@@ -85,7 +85,7 @@ func (w *watcher) run() {
 			}
 			// something is wrong lets fire a telegram message
 			if s.Error != "" {
-				message += fmt.Sprintf("❗️ *%s*\n_%s_", s.Name, s.Error)
+				message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
 			} else if len(s.Data) > 0 {
 				message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
 				for _, d := range s.Data {
