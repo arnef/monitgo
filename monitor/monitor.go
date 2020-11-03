@@ -16,10 +16,9 @@ type Status struct {
 	host  string
 }
 
-func GetStatus() map[string]Status {
-	config := config.Get()
-	stati := make([]Status, len(config.Nodes))
-	for i, node := range config.Nodes {
+func GetStatus(nodes []config.Node) map[string]Status {
+	stati := make([]Status, len(nodes))
+	for i, node := range nodes {
 		stati[i].host = node.Host
 		stati[i].Name = node.Name
 		url := fmt.Sprintf("http://%s:%d/stats", node.Host, node.Port)
@@ -40,7 +39,7 @@ func GetStatus() map[string]Status {
 					stati[i].Error = *stats.Error
 				} else {
 					for _, row := range stats.Data {
-						if row.PIDs == "0" {
+						if row.MemUsage == 0 {
 							stati[i].Data = append(stati[i].Data, row)
 						}
 					}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"git.arnef.de/monitgo/bot"
+	"git.arnef.de/monitgo/config"
 	"git.arnef.de/monitgo/monitor"
 	"github.com/urfave/cli/v2"
 )
@@ -13,7 +14,10 @@ import (
 func Cmd(ctx *cli.Context) error {
 	sleep := ctx.Uint64("interval")
 	watcher := new(sleep)
-	if !ctx.Bool("no-bot") {
+	watcher.noBot = ctx.Bool("no-bot")
+	watcher.config = config.Get(ctx.Path("config"))
+	if !watcher.noBot {
+		watcher.bot = bot.New(watcher.config)
 		go watcher.bot.Listen()
 	}
 	watcher.start()
@@ -22,15 +26,16 @@ func Cmd(ctx *cli.Context) error {
 
 type watcher struct {
 	sleep        uint64
+	noBot        bool
 	bot          bot.Bot
 	lastResponse string
+	config       config.Config
 }
 
 func new(sleep uint64) watcher {
 	return watcher{
 		sleep:        sleep,
 		lastResponse: "",
-		bot:          bot.New(),
 	}
 }
 
@@ -43,7 +48,7 @@ func (w *watcher) start() {
 }
 
 func (w *watcher) run() {
-	stats := monitor.GetStatus()
+	stats := monitor.GetStatus(w.config.Nodes)
 	resp, err := json.Marshal(&stats)
 	if err != nil {
 		panic(err)
@@ -68,7 +73,7 @@ func (w *watcher) run() {
 							}
 						}
 						if errorResolved {
-							resolved += fmt.Sprintf("_%s_ up again\n", i.Name)
+							resolved += fmt.Sprintf("_%s_ is up again\n", i.Name)
 
 						}
 					}
@@ -84,11 +89,11 @@ func (w *watcher) run() {
 			} else if len(s.Data) > 0 {
 				message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
 				for _, d := range s.Data {
-					message += fmt.Sprintf("_%s_ down\n", d.Name)
+					message += fmt.Sprintf("_%s_ is down\n", d.Name)
 				}
 			}
 		}
-		if message != "" {
+		if message != "" && !w.noBot {
 			w.bot.Broadcast(message)
 		}
 	}

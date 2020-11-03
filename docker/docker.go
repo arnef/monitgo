@@ -6,23 +6,23 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"git.arnef.de/monitgo/utils"
 )
 
 // Stats docker
 type Stats struct {
 	ID       string
 	Name     string
-	CPU      string
-	MemUsage string
-	NetIO    string
-	BlockIO  string
-	PIDs     string
+	CPU      float64
+	MemUsage float64
+	NetIO    float64
+	BlockIO  float64
 }
 
 func GetStats() ([]Stats, error) {
-
 	out, err := docker("stats", "--no-stream", "--all", "--format",
-		"{\"ID\": \"{{ .Container }}\", \"Name\": \"{{ .Name }}\", \"CPU\": \"{{ .CPUPerc }}\", \"MemUsage\": \"{{ .MemUsage }}\", \"NetIO\": \"{{ .NetIO }}\", \"BlockIO\": \"{{ .BlockIO }}\", \"PIDs\": \"{{ .PIDs }}\" }")
+		"{\"ID\": \"{{ .Container }}\", \"Name\": \"{{ .Name }}\", \"CPU\": \"{{ .CPUPerc }}\", \"MemUsage\": \"{{ .MemUsage }}\", \"NetIO\": \"{{ .NetIO }}\", \"BlockIO\": \"{{ .BlockIO }}\" }")
 
 	if err != nil {
 		return nil, err
@@ -31,7 +31,23 @@ func GetStats() ([]Stats, error) {
 	lines := strings.Split(string(out), "\n")
 	stats := make([]Stats, len(lines)-1)
 	for i := range stats {
-		err := json.Unmarshal([]byte(lines[i]), &stats[i])
+		var raw = struct {
+			ID       string
+			Name     string
+			CPU      string
+			MemUsage string
+			NetIO    string
+			BlockIO  string
+		}{}
+		err := json.Unmarshal([]byte(lines[i]), &raw)
+		stats[i] = Stats{
+			ID:       raw.ID,
+			Name:     raw.Name,
+			CPU:      utils.MustParsePercentage(raw.CPU),
+			MemUsage: utils.MustParseMegabyte(raw.MemUsage),
+			NetIO:    utils.MustParseMegabyte(raw.NetIO),
+			BlockIO:  utils.MustParseMegabyte(raw.BlockIO),
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"gopkg.in/yaml.v3"
@@ -21,8 +22,9 @@ type Bot struct {
 	Token string
 }
 
-func Get() Config {
-	raw, err := ioutil.ReadFile("config.yml")
+func Get(path string) Config {
+	fmt.Printf("🔧️ loading config from %s\n", path)
+	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}

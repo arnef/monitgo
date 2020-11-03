@@ -10,16 +10,15 @@ import (
 	"git.arnef.de/monitgo/config"
 	"git.arnef.de/monitgo/monitor"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/urfave/cli/v2"
 )
 
 type Bot struct {
 	chatIDs []int64
 	api     *tgbotapi.BotAPI
+	config  config.Config
 }
 
-func New() Bot {
-	config := config.Get()
+func New(config config.Config) Bot {
 	api, err := tgbotapi.NewBotAPI(config.Telegram.Token)
 	if err != nil {
 		panic(err)
@@ -27,6 +26,7 @@ func New() Bot {
 	bot := Bot{
 		api:     api,
 		chatIDs: []int64{},
+		config:  config,
 	}
 	bot.restoreChatIDs()
 	return bot
@@ -136,7 +136,7 @@ func configFile() (string, error) {
 }
 
 func logError(err error) {
-	fmt.Printf("🤖 ERROR: %s", err.Error())
+	fmt.Printf("🤖 ERROR: %s\n", err.Error())
 }
 
 func (b *Bot) restoreChatIDs() {
@@ -157,7 +157,7 @@ func (b *Bot) restoreChatIDs() {
 }
 
 func (b *Bot) status(msg tgbotapi.Update) {
-	status := monitor.GetStatus()
+	status := monitor.GetStatus(b.config.Nodes)
 	message := ""
 	for _, s := range status {
 		if s.Error != "" {
@@ -177,10 +177,4 @@ func (b *Bot) status(msg tgbotapi.Update) {
 func (b *Bot) help(msg tgbotapi.Update) {
 	message := "Available commands:\n/start - Subscribe\n/status - Print the current status"
 	b.Send(msg.Message.Chat.ID, message)
-}
-
-func Cmd(ctx *cli.Context) error {
-	bot := New()
-	bot.Listen()
-	return nil
 }
