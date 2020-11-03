@@ -40,6 +40,10 @@ func main() {
 						Aliases: []string{"n"},
 						Value:   60,
 					},
+					&cli.BoolFlag{
+						Name:  "no-bot",
+						Value: false,
+					},
 				},
 				Action: watch.Cmd,
 			},

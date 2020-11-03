@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"git.arnef.de/monitgo/docker"
 	"github.com/urfave/cli/v2"
@@ -19,7 +20,11 @@ func Cmd(ctx *cli.Context) error {
 }
 
 func stats(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	fmt.Print("⏳ get stats ")
 	stats, err := docker.GetStats()
+	duration := time.Since(start)
+	fmt.Printf("took %s\n", duration)
 
 	w.Header().Set("content-type", "application/json")
 	if err != nil {

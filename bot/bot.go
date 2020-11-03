@@ -1,7 +1,11 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
 
 	"git.arnef.de/monitgo/config"
 	"git.arnef.de/monitgo/monitor"
@@ -20,10 +24,12 @@ func New() Bot {
 	if err != nil {
 		panic(err)
 	}
-	return Bot{
+	bot := Bot{
 		api:     api,
-		chatIDs: []int64{1225509414},
+		chatIDs: []int64{},
 	}
+	bot.restoreChatIDs()
+	return bot
 }
 
 func (b *Bot) Send(chatID int64, message string) {
@@ -38,7 +44,8 @@ func (b *Bot) Broadcast(message string) {
 	}
 }
 
-func (b *Bot) listen() {
+func (b *Bot) Listen() {
+	fmt.Println("🤖 telegram bot running")
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 30
 	updates := b.api.GetUpdatesChan(updateConfig)
@@ -54,11 +61,15 @@ func (b *Bot) listen() {
 }
 
 func (b *Bot) handleCommand(cmd tgbotapi.Update) {
+
 	if cmd.Message.Text == "/start" {
 		b.start(cmd)
 	} else if cmd.Message.Text == "/status" {
 		b.status(cmd)
 	} else if cmd.Message.Text == "/help" {
+		b.help(cmd)
+	} else {
+		fmt.Printf("🤖 > %s unkown command\n", cmd.Message.Text)
 		b.help(cmd)
 	}
 }
@@ -66,9 +77,75 @@ func (b *Bot) handleCommand(cmd tgbotapi.Update) {
 func (b *Bot) start(msg tgbotapi.Update) {
 
 	b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
-
+	b.persistChatIDs()
 	message := fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
 	b.Send(msg.Message.Chat.ID, message)
+
+}
+
+func (b *Bot) persistChatIDs() {
+
+	data, err := json.Marshal(b.chatIDs)
+	if err != nil {
+		logError(err)
+		return
+	}
+	file, err := configFile()
+	if err != nil {
+		logError(err)
+		return
+	}
+
+	if err := ioutil.WriteFile(file, []byte(data), 0600); err != nil {
+		logError(err)
+		return
+	}
+}
+
+func configFile() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	dir := path.Join(configDir, "monitgo")
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.Mkdir(dir, os.ModePerm); err != nil {
+			return "", err
+		}
+	}
+
+	file := path.Join(dir, "chat_ids.json")
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		f, err := os.Create(file)
+		defer f.Close()
+		if err != nil {
+			return "", err
+		}
+	}
+	return file, nil
+}
+
+func logError(err error) {
+	fmt.Printf("🤖 ERROR: %s", err.Error())
+}
+
+func (b *Bot) restoreChatIDs() {
+	file, err := configFile()
+	if err != nil {
+		logError(err)
+		return
+	}
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		logError(err)
+		return
+	}
+	if err := json.Unmarshal(data, &b.chatIDs); err != nil {
+		logError(err)
+		return
+	}
 }
 
 func (b *Bot) status(msg tgbotapi.Update) {
@@ -96,6 +173,6 @@ func (b *Bot) help(msg tgbotapi.Update) {
 
 func Cmd(ctx *cli.Context) error {
 	bot := New()
-	bot.listen()
+	bot.Listen()
 	return nil
 }

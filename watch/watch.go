@@ -13,6 +13,9 @@ import (
 func Cmd(ctx *cli.Context) error {
 	sleep := ctx.Uint64("interval")
 	watcher := new(sleep)
+	if !ctx.Bool("no-bot") {
+		go watcher.bot.Listen()
+	}
 	watcher.start()
 	return nil
 }
@@ -32,6 +35,7 @@ func new(sleep uint64) watcher {
 }
 
 func (w *watcher) start() {
+	fmt.Printf("👀 watcher runs every %d seconds\n", w.sleep)
 	w.run()
 	for range time.Tick(time.Duration(w.sleep) * time.Second) {
 		go w.run()
@@ -61,8 +65,6 @@ func (w *watcher) run() {
 		if message != "" {
 			w.bot.Broadcast(message)
 		}
-	} else {
-		fmt.Println("No changes")
 	}
 	w.lastResponse = response
 }
