@@ -1,71 +1,55 @@
 package monitor
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"sync"
+	"time"
 
 	"git.arnef.de/monitgo/config"
-	"git.arnef.de/monitgo/docker"
 )
 
-type Status struct {
-	Name  string
-	Error string
-	Data  []docker.Stats
-	host  string
-}
-
-func getNodeStatus(node config.Node) Status {
-	url := fmt.Sprintf("http://%s:%d/stats", node.Host, node.Port)
-	resp, err := http.Get(url)
-	status := Status{
-		host: node.Host,
-		Name: node.Name,
-	}
-	if err != nil {
-		status.Error = err.Error()
-	} else {
-		defer resp.Body.Close()
-		var stats = struct {
-			Data  []docker.Stats
-			Error *string
-		}{}
-		err = json.NewDecoder(resp.Body).Decode(&stats)
-		if err != nil {
-			status.Error = err.Error()
-		} else {
-			if stats.Error != nil {
-				status.Error = *stats.Error
-			} else {
-				for _, row := range stats.Data {
-					if row.MemUsage == 0 {
-						status.Data = append(status.Data, row)
-					}
-				}
-			}
+func Init(nodes []config.Node, sleep uint64) {
+	if monit == nil {
+		monit = &monitor{
+			nodes: nodes,
+			sleep: sleep,
 		}
+	} else {
+		panic("Monit already initialized")
 	}
-
-	return status
 }
 
-func GetStatus(nodes []config.Node) map[string]Status {
-	stati := make([]Status, len(nodes))
-	wg := sync.WaitGroup{}
+func Register(d DataReceiver) {
+	if monit != nil {
+		monit.subscriber = append(monit.subscriber, d)
+	}
+}
 
-	for i := range nodes {
-		wg.Add(1)
-		go func(i int) {
-			stati[i] = getNodeStatus(nodes[i])
-			wg.Done()
-		}(i)
+func Start() error {
+	fmt.Printf("👀️ getting data every %d seconds\n", monit.sleep)
+	query()
+	for range time.Tick(time.Duration(monit.sleep) * time.Second) {
+		query()
 	}
-	wg.Wait()
-	result := make(map[string]Status)
-	for _, s := range stati {
-		result[s.host] = s
+	return nil
+}
+
+func query() {
+	stats := GetStatus(monit.nodes)
+	notifyAll(stats)
+}
+
+var (
+	monit *monitor
+)
+
+type monitor struct {
+	subscriber []DataReceiver
+	nodes      []config.Node
+	sleep      uint64
+}
+
+func notifyAll(data Data) {
+	for _, subscriber := range monit.subscriber {
+		subscriber.Push(data)
 	}
-	return result
 }

@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Nodes    []Node
-	Telegram Bot
+	Telegram *Bot
 }
 
 type Node struct {

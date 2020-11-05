@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"git.arnef.de/monitgo/docker"
+	"git.arnef.de/monitgo/node/docker"
 	"github.com/urfave/cli/v2"
 )
 

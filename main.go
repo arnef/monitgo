@@ -4,10 +4,18 @@ import (
 	"fmt"
 	"os"
 
+	"git.arnef.de/monitgo/bot"
+	"git.arnef.de/monitgo/config"
+	"git.arnef.de/monitgo/monitor"
 	"git.arnef.de/monitgo/node"
-	"git.arnef.de/monitgo/watch"
 	"github.com/urfave/cli/v2"
 )
+
+type Logger struct{}
+
+func (l *Logger) Push(data monitor.Data) {
+	fmt.Println(data)
+}
 
 func main() {
 	err := (&cli.App{
@@ -45,18 +53,25 @@ func main() {
 						Value:   60,
 						Usage:   "interval in seconds",
 					},
-					&cli.BoolFlag{
-						Name:  "no-bot",
-						Value: false,
-						Usage: "don't start telegram bot",
-					},
 					&cli.PathFlag{
 						Name:    "config",
 						Aliases: []string{"c"},
 						Value:   "./config.yml",
 					},
 				},
-				Action: watch.Cmd,
+				Action: func(ctx *cli.Context) error {
+					conf := config.Get("./config.yml")
+
+					monitor.Init(conf.Nodes, ctx.Uint64("interval"))
+
+					if conf.Telegram != nil {
+						bot := bot.New(conf)
+						go bot.Listen()
+						monitor.Register(&bot)
+					}
+
+					return monitor.Start()
+				},
 			},
 		},
 	}).Run(os.Args)

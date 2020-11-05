@@ -3,9 +3,6 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
 	"time"
 
 	"git.arnef.de/monitgo/config"
@@ -15,10 +12,12 @@ import (
 )
 
 type Bot struct {
-	chatIDs   []int64
-	api       *tgbotapi.BotAPI
-	config    config.Config
-	startTime time.Time
+	chatIDs      []int64
+	api          *tgbotapi.BotAPI
+	config       config.Config
+	startTime    time.Time
+	lastMessage  *string
+	lastResponse string
 }
 
 func New(config config.Config) Bot {
@@ -36,10 +35,38 @@ func New(config config.Config) Bot {
 	return bot
 }
 
-func (b *Bot) Send(chatID int64, message string) {
+func (b *Bot) reply(chatID int64, message string) {
 	msg := tgbotapi.NewMessage(chatID, message)
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	b.api.Send(msg)
+}
+
+func (b *Bot) statusToMessage() string {
+	uptime := durafmt.ParseShort(time.Since(b.startTime))
+	if b.lastResponse != "" {
+		message := ""
+		var data monitor.Data
+		err := json.Unmarshal([]byte(b.lastResponse), &data)
+		if err == nil {
+			for _, s := range data {
+				if s.Error != "" {
+					message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
+				} else if len(s.Data) > 0 {
+					message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
+					for _, d := range s.Data {
+						message += fmt.Sprintf("_%s_ down\n", d.Name)
+					}
+				} else {
+					message += fmt.Sprintf("✅️ *%s*\n", s.Name)
+				}
+
+			}
+			return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNodes:\n%s", uptime, message)
+		}
+	}
+
+	return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNot enought data!", uptime)
+
 }
 
 func (b *Bot) asyncSend(chatID int64, callable func() string) {
@@ -57,7 +84,7 @@ func (b *Bot) asyncSend(chatID int64, callable func() string) {
 
 func (b *Bot) Broadcast(message string) {
 	for _, chatID := range b.chatIDs {
-		b.Send(chatID, message)
+		b.reply(chatID, message)
 	}
 }
 
@@ -92,7 +119,6 @@ func (b *Bot) handleCommand(cmd tgbotapi.Update) {
 }
 
 func (b *Bot) start(msg tgbotapi.Update) {
-
 	inList := false
 	for _, id := range b.chatIDs {
 		if id == msg.Message.Chat.ID {
@@ -104,97 +130,19 @@ func (b *Bot) start(msg tgbotapi.Update) {
 		b.persistChatIDs()
 	}
 	message := fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
-	b.Send(msg.Message.Chat.ID, message)
+	b.reply(msg.Message.Chat.ID, message)
 
-}
-
-func (b *Bot) persistChatIDs() {
-
-	data, err := json.Marshal(b.chatIDs)
-	if err != nil {
-		logError(err)
-		return
-	}
-	file, err := configFile()
-	if err != nil {
-		logError(err)
-		return
-	}
-
-	if err := ioutil.WriteFile(file, []byte(data), 0600); err != nil {
-		logError(err)
-		return
-	}
-}
-
-func configFile() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-
-	dir := path.Join(configDir, "monitgo")
-
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.Mkdir(dir, os.ModePerm); err != nil {
-			return "", err
-		}
-	}
-
-	file := path.Join(dir, "chat_ids.json")
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		f, err := os.Create(file)
-		defer f.Close()
-		if err != nil {
-			return "", err
-		}
-	}
-	return file, nil
 }
 
 func logError(err error) {
 	fmt.Printf("🤖 ERROR: %s\n", err.Error())
 }
 
-func (b *Bot) restoreChatIDs() {
-	file, err := configFile()
-	if err != nil {
-		logError(err)
-		return
-	}
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		logError(err)
-		return
-	}
-	if err := json.Unmarshal(data, &b.chatIDs); err != nil {
-		logError(err)
-		return
-	}
-}
-
 func (b *Bot) status(msg tgbotapi.Update) {
-	b.asyncSend(msg.Message.Chat.ID, func() string {
-		status := monitor.GetStatus(b.config.Nodes)
-		message := ""
-		for _, s := range status {
-			if s.Error != "" {
-				message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
-			} else if len(s.Data) > 0 {
-				message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
-				for _, d := range s.Data {
-					message += fmt.Sprintf("_%s_ down\n", d.Name)
-				}
-			} else {
-				message += fmt.Sprintf("✅️ *%s*\n", s.Name)
-			}
-		}
-		uptime := durafmt.ParseShort(time.Since(b.startTime))
-		return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNodes:\n%s", uptime, message)
-	})
+	b.reply(msg.Message.Chat.ID, b.statusToMessage())
 }
 
 func (b *Bot) help(msg tgbotapi.Update) {
 	message := "Available commands:\n/start - Subscribe\n/status - Print the current status"
-	b.Send(msg.Message.Chat.ID, message)
+	b.reply(msg.Message.Chat.ID, message)
 }
