@@ -3,18 +3,16 @@ package monitor
 import (
 	"fmt"
 	"time"
-
-	"git.arnef.de/monitgo/config"
 )
 
-func Init(nodes []config.Node, sleep uint64) {
+func Init(nodes []Node, sleep uint64) {
 	if monit == nil {
 		monit = &monitor{
 			nodes: nodes,
 			sleep: sleep,
 		}
 	} else {
-		panic("Monit already initialized")
+		panic("monitor service already initialized")
 	}
 }
 
@@ -25,6 +23,9 @@ func Register(d DataReceiver) {
 }
 
 func Start() error {
+	if monit == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
 	fmt.Printf("👀️ getting data every %d seconds\n", monit.sleep)
 	query()
 	for range time.Tick(time.Duration(monit.sleep) * time.Second) {
@@ -44,7 +45,7 @@ var (
 
 type monitor struct {
 	subscriber []DataReceiver
-	nodes      []config.Node
+	nodes      []Node
 	sleep      uint64
 }
 

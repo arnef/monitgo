@@ -49,11 +49,11 @@ func (b *Bot) statusToMessage() string {
 		err := json.Unmarshal([]byte(b.lastResponse), &data)
 		if err == nil {
 			for _, s := range data {
-				if s.Error != "" {
+				if s.Error != nil {
 					message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
-				} else if len(s.Data) > 0 {
+				} else if len(s.Container) > 0 {
 					message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
-					for _, d := range s.Data {
+					for _, d := range s.Container {
 						message += fmt.Sprintf("_%s_ down\n", d.Name)
 					}
 				} else {

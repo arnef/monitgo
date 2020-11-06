@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"git.arnef.de/monitgo/node/docker"
+	"git.arnef.de/monitgo/node/host"
 	"github.com/urfave/cli/v2"
 )
 
@@ -37,8 +38,10 @@ func stats(w http.ResponseWriter, r *http.Request) {
 
 func writeStats(w io.Writer, pretty bool) {
 	start := time.Now()
+
 	fmt.Print("⏳ get stats ")
-	stats, err := docker.GetStats()
+	container, containerError := docker.GetStats()
+	host, hostError := host.GetStats()
 	duration := time.Since(start)
 	fmt.Printf("took %s\n", duration)
 
@@ -46,11 +49,18 @@ func writeStats(w io.Writer, pretty bool) {
 	if pretty {
 		encoder.SetIndent("", "  ")
 	}
-	if err != nil {
+	if containerError != nil {
 		encoder.Encode(map[string]string{
-			"error": err.Error(),
+			"Error": containerError.Error(),
+		})
+	} else if hostError != nil {
+		encoder.Encode(map[string]string{
+			"Error": hostError.Error(),
 		})
 	} else {
-		encoder.Encode(map[string][]docker.Stats{"data": stats})
+		encoder.Encode(map[string]interface{}{
+			"Container": container,
+			"Host":      host,
+		})
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"git.arnef.de/monitgo/bot"
 	"git.arnef.de/monitgo/config"
+	"git.arnef.de/monitgo/database"
 	"git.arnef.de/monitgo/monitor"
 	"git.arnef.de/monitgo/node"
 	"github.com/urfave/cli/v2"
@@ -68,6 +69,11 @@ func main() {
 						bot := bot.New(conf)
 						go bot.Listen()
 						monitor.Register(&bot)
+					}
+
+					if conf.InfluxDB != nil {
+						database.Init(*conf.InfluxDB)
+						monitor.Register(conf.InfluxDB)
 					}
 
 					return monitor.Start()

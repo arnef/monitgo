@@ -16,7 +16,8 @@ type Stats struct {
 	Name     string
 	CPU      float64
 	MemUsage float64
-	NetIO    float64
+	NetIn    float64
+	NetOut   float64
 	BlockIO  float64
 }
 
@@ -40,12 +41,14 @@ func GetStats() ([]Stats, error) {
 			BlockIO  string
 		}{}
 		err := json.Unmarshal([]byte(lines[i]), &raw)
+		netsplit := strings.Split(raw.NetIO, "/")
 		stats[i] = Stats{
 			ID:       raw.ID,
 			Name:     raw.Name,
 			CPU:      utils.MustParsePercentage(raw.CPU),
 			MemUsage: utils.MustParseMegabyte(raw.MemUsage),
-			NetIO:    utils.MustParseMegabyte(raw.NetIO),
+			NetIn:    utils.MustParseMegabyte(netsplit[0]),
+			NetOut:   utils.MustParseMegabyte(netsplit[1]),
 			BlockIO:  utils.MustParseMegabyte(raw.BlockIO),
 		}
 		if err != nil {

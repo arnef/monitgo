@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-
-	"git.arnef.de/monitgo/config"
-	"git.arnef.de/monitgo/node/docker"
 )
 
-func GetStatus(nodes []config.Node) map[string]Status {
+func GetStatus(nodes []Node) map[string]Status {
 	stati := make([]Status, len(nodes))
 	wg := sync.WaitGroup{}
 
@@ -24,41 +21,65 @@ func GetStatus(nodes []config.Node) map[string]Status {
 	wg.Wait()
 	result := make(map[string]Status)
 	for _, s := range stati {
-		result[s.host] = s
+		result[s.key] = s
 	}
 	return result
 }
 
-func getNodeStatus(node config.Node) Status {
+func getNodeStatus(node Node) Status {
 	url := fmt.Sprintf("http://%s:%d/stats", node.Host, node.Port)
 	resp, err := http.Get(url)
-	status := Status{
-		host: node.Host,
-		Name: node.Name,
-	}
 	if err != nil {
-		status.Error = err.Error()
-	} else {
-		defer resp.Body.Close()
-		var stats = struct {
-			Data  []docker.Stats
-			Error *string
-		}{}
-		err = json.NewDecoder(resp.Body).Decode(&stats)
-		if err != nil {
-			status.Error = err.Error()
-		} else {
-			if stats.Error != nil {
-				status.Error = *stats.Error
-			} else {
-				for _, row := range stats.Data {
-					if row.MemUsage == 0 {
-						status.Data = append(status.Data, row)
-					}
-				}
-			}
+		return Status{
+			key:   node.Host,
+			Name:  node.Name,
+			Error: err,
+		}
+	}
+	var status Status
+	err = json.NewDecoder(resp.Body).Decode(&status)
+	if err != nil {
+		return Status{
+			key:   node.Host,
+			Name:  node.Name,
+			Error: err,
 		}
 	}
 
+	status.key = node.Host
+	status.Name = node.Name
 	return status
+	// status := Status{
+	// 	host: node.Host,
+	// 	Name: node.Name,
+	// }
+	// var errVal string
+	// if err != nil {
+	// 	errVal = err.Error()
+	// } else {
+	// 	defer resp.Body.Close()
+	// 	var stats = struct {
+	// 		Data  []docker.Stats
+	// 		Error *string
+	// 	}{}
+	// 	err = json.NewDecoder(resp.Body).Decode(&stats)
+	// 	if err != nil {
+	// 		errVal = err.Error()
+	// 	} else {
+	// 		if stats.Error != nil {
+	// 			errVal = *stats.Error
+	// 		} else {
+	// 			for _, row := range stats.Data {
+	// 				// if row.MemUsage == 0 {
+	// 				status.Data = append(status.Data, row)
+	// 				// }
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if errVal != "" {
+	// 	status.Error = &errVal
+	// }
+
+	// return status
 }

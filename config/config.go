@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"git.arnef.de/monitgo/database"
+	"git.arnef.de/monitgo/monitor"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Nodes    []Node
+	Nodes    []monitor.Node
 	Telegram *Bot
-}
-
-type Node struct {
-	Name string
-	Host string
-	Port uint
+	InfluxDB *database.InfluxDB `yaml:"influxdb"`
 }
 
 type Bot struct {
@@ -30,6 +27,5 @@ func Get(path string) Config {
 	}
 	var config Config
 	yaml.Unmarshal(raw, &config)
-
 	return config
 }
