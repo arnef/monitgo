@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"git.arnef.de/monitgo/node/cmd"
+	"git.arnef.de/monitgo/utils"
 )
 
-func getNormalizedLoad() ([]int, error) {
+func getNormalizedLoad() ([]float64, error) {
 	cpus, err := getCPUs()
 	if err != nil {
 		return nil, err
@@ -19,7 +20,7 @@ func getNormalizedLoad() ([]int, error) {
 		return nil, err
 	}
 	for i, l := range load {
-		load[i] = l / cpus
+		load[i] = utils.Round(l / float64(cpus))
 		// fmt.Println(l / cpus)
 	}
 	return load, nil
@@ -46,20 +47,20 @@ func getCPUs() (int, error) {
 	return 0, fmt.Errorf("Could not get CPUs")
 }
 
-func getLoad() ([]int, error) {
+func getLoad() ([]float64, error) {
 	uptime, err := cmd.Exec("uptime")
 	if err != nil {
 		return nil, err
 	}
 	load := strings.Split(string(uptime), "load average: ")
 	loads := strings.Split(load[len(load)-1], ", ")
-	vals := make([]int, len(loads))
+	vals := make([]float64, len(loads))
 	for i, l := range loads {
 		parsed, err := strconv.ParseFloat(strings.TrimSpace(l), 64)
 		if err != nil {
 			return nil, err
 		}
-		vals[i] = int(parsed * 100)
+		vals[i] = parsed * 100
 	}
 	return vals, nil
 }

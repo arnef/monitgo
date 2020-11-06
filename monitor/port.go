@@ -11,10 +11,9 @@ type DataReceiver interface {
 
 type Status struct {
 	Name      string
-	Error     error
+	Error     *string
 	Container []docker.Stats
-	Host      host.HostStats
-	key       string
+	Host      host.Stats
 }
 
 type Node struct {

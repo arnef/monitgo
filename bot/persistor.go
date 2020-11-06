@@ -10,16 +10,13 @@ import (
 func (b *Bot) restoreChatIDs() {
 	file, err := configFile()
 	if err != nil {
-		logError(err)
 		return
 	}
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		logError(err)
 		return
 	}
 	if err := json.Unmarshal(data, &b.chatIDs); err != nil {
-		logError(err)
 		return
 	}
 }
@@ -27,17 +24,14 @@ func (b *Bot) restoreChatIDs() {
 func (b *Bot) persistChatIDs() {
 	data, err := json.Marshal(b.chatIDs)
 	if err != nil {
-		logError(err)
 		return
 	}
 	file, err := configFile()
 	if err != nil {
-		logError(err)
 		return
 	}
 
 	if err := ioutil.WriteFile(file, []byte(data), 0600); err != nil {
-		logError(err)
 		return
 	}
 }

@@ -7,13 +7,7 @@ import (
 	"git.arnef.de/monitgo/utils"
 )
 
-type DiskUsage struct {
-	Name  string
-	Total int
-	Used  int
-}
-
-func getDiskUsage() ([]DiskUsage, error) {
+func getDiskUsage() (*Usage, error) {
 	df, err := cmd.Exec("df", "-BMB", "--output=source,size,used")
 
 	if err != nil {
@@ -22,17 +16,16 @@ func getDiskUsage() ([]DiskUsage, error) {
 
 	lines := strings.Split(string(df), "\n")
 	lines = lines[1 : len(lines)-1]
-	var usage []DiskUsage
+	usage := Usage{}
 	for _, line := range lines {
 		values := utils.SplitSpaces(line)
 		if values[0][0] == '/' {
-			usage = append(usage, DiskUsage{
-				Name:  values[0],
-				Total: int(utils.MustParseMegabyte(values[1])),
-				Used:  int(utils.MustParseMegabyte(values[2])),
-			})
+			usage.Used += utils.MustParseMegabyte(values[2])
+			usage.Total += utils.MustParseMegabyte(values[1])
 		}
 	}
 
-	return usage, nil
+	usage.Percentage = utils.Round(usage.Used * 100 / usage.Total)
+
+	return &usage, nil
 }

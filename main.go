@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"git.arnef.de/monitgo/alerts"
 	"git.arnef.de/monitgo/bot"
 	"git.arnef.de/monitgo/config"
 	"git.arnef.de/monitgo/database"
@@ -65,10 +66,13 @@ func main() {
 
 					monitor.Init(conf.Nodes, ctx.Uint64("interval"))
 
+					am := alerts.AlertManager{}
+					monitor.Register(&am)
+
 					if conf.Telegram != nil {
 						bot := bot.New(conf)
 						go bot.Listen()
-						monitor.Register(&bot)
+						am.Register(&bot)
 					}
 
 					if conf.InfluxDB != nil {

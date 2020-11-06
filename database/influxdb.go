@@ -67,7 +67,6 @@ func (db *InfluxDB) Push(data monitor.Data) {
 				}, now)
 				writeAPI.WritePoint(p)
 
-				// for _, disk := range stats.Host.DiskUsage {
 				p = influxdb2.NewPoint("disk_usage", map[string]string{
 					"name": stats.Name,
 					"host": host,

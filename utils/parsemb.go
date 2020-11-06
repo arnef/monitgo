@@ -38,3 +38,7 @@ func MustParseMegabyte(val string) float64 {
 	}
 	return res
 }
+
+func Round(value float64) float64 {
+	return math.Round(value*100) / 100
+}

@@ -1,23 +1,21 @@
 package bot
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"git.arnef.de/monitgo/alerts"
 	"git.arnef.de/monitgo/config"
-	"git.arnef.de/monitgo/monitor"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/hako/durafmt"
 )
 
 type Bot struct {
-	chatIDs      []int64
-	api          *tgbotapi.BotAPI
-	config       config.Config
-	startTime    time.Time
-	lastMessage  *string
-	lastResponse string
+	chatIDs    []int64
+	api        *tgbotapi.BotAPI
+	config     config.Config
+	startTime  time.Time
+	lastAlerts alerts.Alerts
 }
 
 func New(config config.Config) Bot {
@@ -37,49 +35,8 @@ func New(config config.Config) Bot {
 
 func (b *Bot) reply(chatID int64, message string) {
 	msg := tgbotapi.NewMessage(chatID, message)
-	msg.ParseMode = tgbotapi.ModeMarkdown
+	msg.ParseMode = tgbotapi.ModeHTML
 	b.api.Send(msg)
-}
-
-func (b *Bot) statusToMessage() string {
-	uptime := durafmt.ParseShort(time.Since(b.startTime))
-	if b.lastResponse != "" {
-		message := ""
-		var data monitor.Data
-		err := json.Unmarshal([]byte(b.lastResponse), &data)
-		if err == nil {
-			for _, s := range data {
-				if s.Error != nil {
-					message += fmt.Sprintf("❗️ *%s*\n_%s_\n", s.Name, s.Error)
-				} else if len(s.Container) > 0 {
-					message += fmt.Sprintf("🔥️ *%s*\n", s.Name)
-					for _, d := range s.Container {
-						message += fmt.Sprintf("_%s_ down\n", d.Name)
-					}
-				} else {
-					message += fmt.Sprintf("✅️ *%s*\n", s.Name)
-				}
-
-			}
-			return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNodes:\n%s", uptime, message)
-		}
-	}
-
-	return fmt.Sprintf("*Monitgo Watcher*\nUptime: %s\n\nNot enought data!", uptime)
-
-}
-
-func (b *Bot) asyncSend(chatID int64, callable func() string) {
-	msg := tgbotapi.NewMessage(chatID, "⏳")
-	m, err := b.api.Send(msg)
-	if err == nil {
-
-		newMsg := tgbotapi.NewEditMessageText(chatID, m.MessageID, callable())
-		newMsg.ParseMode = tgbotapi.ModeMarkdown
-		b.api.Send(newMsg)
-	} else {
-		// TODO err message
-	}
 }
 
 func (b *Bot) Broadcast(message string) {
@@ -112,8 +69,9 @@ func (b *Bot) handleCommand(cmd tgbotapi.Update) {
 		b.status(cmd)
 	} else if cmd.Message.Text == "/help" {
 		b.help(cmd)
+	} else if cmd.Message.Text == "/alerts" {
+		b.alerts(cmd)
 	} else {
-		fmt.Printf("🤖 > %s unkown command\n", cmd.Message.Text)
 		b.help(cmd)
 	}
 }
@@ -134,15 +92,20 @@ func (b *Bot) start(msg tgbotapi.Update) {
 
 }
 
-func logError(err error) {
-	fmt.Printf("🤖 ERROR: %s\n", err.Error())
+func (b *Bot) alerts(msg tgbotapi.Update) {
+	message := b.alertsToMessage()
+	if message == "" {
+		message = "🎉️ No alerts right now!"
+	}
+	b.reply(msg.Message.Chat.ID, message)
 }
 
 func (b *Bot) status(msg tgbotapi.Update) {
-	b.reply(msg.Message.Chat.ID, b.statusToMessage())
+	uptime := fmt.Sprintf("<b>Monitgo Watcher</b>\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
+	b.reply(msg.Message.Chat.ID, uptime)
 }
 
 func (b *Bot) help(msg tgbotapi.Update) {
-	message := "Available commands:\n/start - Subscribe\n/status - Print the current status"
+	message := "Available commands:\n/start - Subscribe\n/status - Print the current status\n/alerts - Print current alerts"
 	b.reply(msg.Message.Chat.ID, message)
 }

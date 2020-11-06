@@ -1,6 +1,7 @@
 package host
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -8,13 +9,7 @@ import (
 	"git.arnef.de/monitgo/utils"
 )
 
-type MemUsage struct {
-	Name  string
-	Total int
-	Used  int
-}
-
-func getMemUsage() ([]MemUsage, error) {
+func getMemUsage() (*Usage, error) {
 	mem, err := cmd.Exec("free", "--mega")
 	if err != nil {
 		return nil, err
@@ -23,26 +18,26 @@ func getMemUsage() ([]MemUsage, error) {
 	lines := strings.Split(string(mem), "\n")
 	lines = lines[1 : len(lines)-1]
 
-	memory := make([]MemUsage, len(lines))
-
-	for i, line := range lines {
+	for _, line := range lines {
 		values := utils.SplitSpaces(line)
 
-		total, err := strconv.Atoi(values[1])
-		if err != nil {
-			return nil, err
-		}
-		used, err := strconv.Atoi(values[2])
-		if err != nil {
-			return nil, err
-		}
-
-		memory[i] = MemUsage{
-			Name:  string(values[0][:len(values[0])-1]),
-			Total: total,
-			Used:  used,
+		if values[0] == "Mem:" {
+			total, err := strconv.ParseFloat(values[1], 64)
+			if err != nil {
+				return nil, err
+			}
+			used, err := strconv.ParseFloat(values[2], 64)
+			if err != nil {
+				return nil, err
+			}
+			usage := Usage{
+				Total:      total,
+				Used:       used,
+				Percentage: utils.Round(used * 100 / total),
+			}
+			return &usage, nil
 		}
 	}
 
-	return memory, nil
+	return nil, fmt.Errorf("No memory found")
 }

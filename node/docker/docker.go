@@ -1,12 +1,10 @@
 package docker
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"os/exec"
 	"strings"
 
+	"git.arnef.de/monitgo/node/cmd"
 	"git.arnef.de/monitgo/utils"
 )
 
@@ -22,7 +20,7 @@ type Stats struct {
 }
 
 func GetStats() ([]Stats, error) {
-	out, err := docker("stats", "--no-stream", "--all", "--format",
+	out, err := cmd.Exec("docker", "stats", "--no-stream", "--all", "--format",
 		"{\"ID\": \"{{ .Container }}\", \"Name\": \"{{ .Name }}\", \"CPU\": \"{{ .CPUPerc }}\", \"MemUsage\": \"{{ .MemUsage }}\", \"NetIO\": \"{{ .NetIO }}\", \"BlockIO\": \"{{ .BlockIO }}\" }")
 
 	if err != nil {
@@ -56,27 +54,4 @@ func GetStats() ([]Stats, error) {
 		}
 	}
 	return stats, nil
-}
-
-func docker(args ...string) ([]byte, error) {
-	docker, err := exec.LookPath("docker")
-	if err != nil {
-
-		return nil, err
-	}
-
-	var outb, errb bytes.Buffer
-	cmd := &exec.Cmd{
-		Path:   docker,
-		Stderr: &errb,
-		Stdout: &outb,
-		Args:   append([]string{docker}, args...),
-	}
-	err = cmd.Run()
-	if err != nil {
-
-		return nil, fmt.Errorf(errb.String())
-	}
-
-	return outb.Bytes(), err
 }

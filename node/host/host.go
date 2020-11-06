@@ -1,18 +1,18 @@
 package host
 
-type HostStats struct {
-	CPULoad   []int
+type Stats struct {
+	CPULoad   []float64
 	MemUsage  Usage
 	DiskUsage Usage
 }
 
 type Usage struct {
-	Total      int
-	Used       int
-	Percentage int
+	Total      float64
+	Used       float64
+	Percentage float64
 }
 
-func GetStats() (*HostStats, error) {
+func GetStats() (*Stats, error) {
 
 	cpuLoad, err := getNormalizedLoad()
 	if err != nil {
@@ -29,28 +29,10 @@ func GetStats() (*HostStats, error) {
 		return nil, err
 	}
 
-	var memUsageCom Usage
-	for _, mem := range memUsage {
-		if mem.Name == "Mem" {
-			memUsageCom = Usage{
-				Used:       mem.Used,
-				Total:      mem.Total,
-				Percentage: mem.Used * 100 / mem.Total,
-			}
-		}
-	}
-
-	diskUsageCom := Usage{Used: 0, Total: 0}
-	for _, disk := range diskUsage {
-		diskUsageCom.Total += disk.Total
-		diskUsageCom.Used += disk.Used
-	}
-	diskUsageCom.Percentage = diskUsageCom.Used * 100 / diskUsageCom.Total
-
-	stats := HostStats{
+	stats := Stats{
 		CPULoad:   cpuLoad,
-		MemUsage:  memUsageCom,
-		DiskUsage: diskUsageCom,
+		MemUsage:  *memUsage,
+		DiskUsage: *diskUsage,
 	}
 
 	return &stats, nil
