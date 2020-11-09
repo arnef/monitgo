@@ -1,6 +1,7 @@
 package host
 
 import (
+	"strconv"
 	"strings"
 
 	"git.arnef.de/monitgo/node/cmd"
@@ -8,7 +9,7 @@ import (
 )
 
 func getDiskUsage() (*Usage, error) {
-	df, err := cmd.Exec("df", "-BMB", "--output=source,size,used")
+	df, err := cmd.Exec("df", "--output=source,size,used")
 
 	if err != nil {
 		return nil, err
@@ -20,12 +21,20 @@ func getDiskUsage() (*Usage, error) {
 	for _, line := range lines {
 		values := utils.SplitSpaces(line)
 		if values[0][0] == '/' {
-			usage.Used += utils.MustParseMegabyte(values[2])
-			usage.Total += utils.MustParseMegabyte(values[1])
+			total, err := strconv.ParseUint(values[1], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			used, err := strconv.ParseUint(values[2], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			usage.Used += used
+			usage.Total += total
 		}
 	}
 
-	usage.Percentage = utils.Round(usage.Used * 100 / usage.Total)
+	usage.Percentage = utils.Round(float64(usage.Used) * 100 / float64(usage.Total))
 
 	return &usage, nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func getMemUsage() (*Usage, error) {
-	mem, err := cmd.Exec("free", "--mega")
+	mem, err := cmd.Exec("free", "--bytes")
 	if err != nil {
 		return nil, err
 	}
@@ -22,18 +22,18 @@ func getMemUsage() (*Usage, error) {
 		values := utils.SplitSpaces(line)
 
 		if values[0] == "Mem:" {
-			total, err := strconv.ParseFloat(values[1], 64)
+			total, err := strconv.ParseUint(values[1], 10, 64)
 			if err != nil {
 				return nil, err
 			}
-			used, err := strconv.ParseFloat(values[2], 64)
+			used, err := strconv.ParseUint(values[2], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 			usage := Usage{
 				Total:      total,
 				Used:       used,
-				Percentage: utils.Round(used * 100 / total),
+				Percentage: utils.Round(float64(used) * 100 / float64(total)),
 			}
 			return &usage, nil
 		}

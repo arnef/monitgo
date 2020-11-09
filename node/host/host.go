@@ -7,8 +7,11 @@ type Stats struct {
 }
 
 type Usage struct {
-	Total      float64
-	Used       float64
+	// Total avaiable space in bytes
+	Total uint64
+	// Used space in bytes
+	Used uint64
+	// Percentage used * 100 / total
 	Percentage float64
 }
 

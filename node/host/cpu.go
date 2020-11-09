@@ -12,8 +12,10 @@ import (
 
 func getNormalizedLoad() ([]float64, error) {
 	cpus, err := getCPUs()
-	if err != nil {
-		return nil, err
+	if err != nil || cpus == 0 {
+		fmt.Println(err)
+		cpus = 4
+		// return nil, err
 	}
 	load, err := getLoad()
 	if err != nil {
@@ -29,9 +31,7 @@ func getNormalizedLoad() ([]float64, error) {
 func getCPUs() (int, error) {
 	lscpu, err := cmd.Exec("lscpu", "--json")
 	if err != nil {
-		fmt.Println(err)
-		return 4, nil
-		// return 0, err
+		return 0, err
 	}
 	var data map[string][]map[string]string
 	err = json.Unmarshal(lscpu, &data)

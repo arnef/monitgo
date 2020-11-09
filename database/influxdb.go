@@ -49,9 +49,8 @@ func (db *InfluxDB) Push(data monitor.Data) {
 						map[string]interface{}{
 							"cpu":       container.CPU,
 							"mem_usage": container.MemUsage,
-							"net_in":    container.NetIn,
-							"net_out":   container.NetOut,
-							"disk_io":   container.BlockIO,
+							"net_in":    container.NetRx,
+							"net_out":   container.NetTx,
 						},
 						now,
 					)

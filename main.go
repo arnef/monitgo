@@ -62,7 +62,7 @@ func main() {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
-					conf := config.Get("./config.yml")
+					conf := config.Get(ctx.String("config"))
 
 					monitor.Init(conf.Nodes, ctx.Uint64("interval"))
 

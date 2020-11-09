@@ -15,13 +15,13 @@ import (
 
 // Cmd start node exporter
 func Cmd(ctx *cli.Context) error {
+	writeStats(nil, false)
 	port := ctx.Uint("port")
 	host := ctx.String("host")
 	if ctx.Bool("dry-run") {
+		time.Sleep(2 * time.Second)
 		dryRun()
 		return nil
-	} else {
-		writeStats(nil, false)
 	}
 	http.HandleFunc("/stats", stats)
 	fmt.Printf("🚀️ running at %s:%d\n", host, port)
@@ -41,13 +41,14 @@ func stats(w http.ResponseWriter, r *http.Request) {
 func writeStats(w io.Writer, pretty bool) {
 	start := time.Now()
 
-	fmt.Print("⏳ get stats ")
+	if w != nil {
+		fmt.Print("⏳ get stats ")
+	}
 	container, containerError := docker.GetStats()
 	host, hostError := host.GetStats()
 	duration := time.Since(start)
-	fmt.Printf("took %s\n", duration)
-
 	if w != nil {
+		fmt.Printf("took %s\n", duration)
 		encoder := json.NewEncoder(w)
 		if pretty {
 			encoder.SetIndent("", "  ")
