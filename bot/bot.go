@@ -39,6 +39,15 @@ func (b *Bot) reply(chatID int64, message string) {
 	b.api.Send(msg)
 }
 
+func (b *Bot) isAuthorized(chatID int64) bool {
+	for _, id := range b.chatIDs {
+		if id == chatID {
+			return true
+		}
+	}
+	return false
+}
+
 func (b *Bot) Broadcast(message string) {
 	for _, chatID := range b.chatIDs {
 		b.reply(chatID, message)
@@ -65,29 +74,47 @@ func (b *Bot) handleCommand(cmd tgbotapi.Update) {
 
 	if cmd.Message.Text == "/start" {
 		b.start(cmd)
-	} else if cmd.Message.Text == "/status" {
-		b.status(cmd)
-	} else if cmd.Message.Text == "/help" {
-		b.help(cmd)
-	} else if cmd.Message.Text == "/alerts" {
-		b.alerts(cmd)
-	} else {
-		b.help(cmd)
+	} else if b.isAuthorized(cmd.Message.Chat.ID) {
+		if cmd.Message.Text == "/uptime" {
+			b.status(cmd)
+		} else if cmd.Message.Text == "/help" {
+			b.help(cmd)
+		} else if cmd.Message.Text == "/status" {
+			b.alerts(cmd)
+		} else {
+			b.help(cmd)
+		}
 	}
+
+}
+
+func (b *Bot) isAdmin(msg tgbotapi.Update) bool {
+	for _, id := range b.config.Telegram.Admin {
+		if id == msg.Message.From.ID {
+			return true
+		}
+	}
+	return false
 }
 
 func (b *Bot) start(msg tgbotapi.Update) {
 	inList := false
+	var message string
 	for _, id := range b.chatIDs {
 		if id == msg.Message.Chat.ID {
 			inList = true
+			message = fmt.Sprintf("Hey %s! This chat is already kept up to date!\n/help", msg.Message.From)
 		}
 	}
 	if !inList {
-		b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
-		b.persistChatIDs()
+		if b.isAdmin(msg) {
+			b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
+			b.persistChatIDs()
+			message = fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
+		} else {
+			message = fmt.Sprintf("Hey %s! You're not allowed to control this bot.", msg.Message.From)
+		}
 	}
-	message := fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
 	b.reply(msg.Message.Chat.ID, message)
 
 }
@@ -106,6 +133,6 @@ func (b *Bot) status(msg tgbotapi.Update) {
 }
 
 func (b *Bot) help(msg tgbotapi.Update) {
-	message := "Available commands:\n/start - Subscribe\n/status - Print the current status\n/alerts - Print current alerts"
+	message := "Available commands:\n/start - Subscribe\n/status - Print the current status\n/uptime - Print current uptime"
 	b.reply(msg.Message.Chat.ID, message)
 }

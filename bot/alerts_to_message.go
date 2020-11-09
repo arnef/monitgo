@@ -23,7 +23,7 @@ func (b *Bot) alertsToMessage() string {
 				case a.Error:
 					message += fmt.Sprintf("❗️ %s", *alert.Error)
 				case a.ErrorResolved:
-					message += fmt.Sprintf("✅️ resolved\n<s>%s</s>\n", *alert.Error)
+					message += fmt.Sprintf("✅️ <s>%s</s>\n", *alert.Error)
 				}
 			}
 		}
