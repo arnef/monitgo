@@ -14,6 +14,7 @@ type InfluxDB struct {
 	DatabaseName string `yaml:"database"`
 	Username     string
 	Password     string
+	Organization string
 }
 
 var (
@@ -33,7 +34,7 @@ func Init(influxdb InfluxDB) {
 
 func (db *InfluxDB) Push(data monitor.Data) {
 	if client != nil {
-		writeAPI := (*client).WriteAPI("skillme", "test")
+		writeAPI := (*client).WriteAPI(db.Organization, db.DatabaseName)
 		now := time.Now()
 
 		for host, stats := range data {

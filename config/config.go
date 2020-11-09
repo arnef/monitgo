@@ -17,6 +17,7 @@ type Config struct {
 
 type Bot struct {
 	Token string
+	Admin []int
 }
 
 func Get(path string) Config {
@@ -27,5 +28,6 @@ func Get(path string) Config {
 	}
 	var config Config
 	yaml.Unmarshal(raw, &config)
+	fmt.Println(config.Telegram)
 	return config
 }
