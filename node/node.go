@@ -20,6 +20,8 @@ func Cmd(ctx *cli.Context) error {
 	if ctx.Bool("dry-run") {
 		dryRun()
 		return nil
+	} else {
+		writeStats(nil, false)
 	}
 	http.HandleFunc("/stats", stats)
 	fmt.Printf("🚀️ running at %s:%d\n", host, port)
@@ -45,22 +47,24 @@ func writeStats(w io.Writer, pretty bool) {
 	duration := time.Since(start)
 	fmt.Printf("took %s\n", duration)
 
-	encoder := json.NewEncoder(w)
-	if pretty {
-		encoder.SetIndent("", "  ")
-	}
-	if containerError != nil {
-		encoder.Encode(map[string]string{
-			"Error": containerError.Error(),
-		})
-	} else if hostError != nil {
-		encoder.Encode(map[string]string{
-			"Error": hostError.Error(),
-		})
-	} else {
-		encoder.Encode(map[string]interface{}{
-			"Container": container,
-			"Host":      host,
-		})
+	if w != nil {
+		encoder := json.NewEncoder(w)
+		if pretty {
+			encoder.SetIndent("", "  ")
+		}
+		if containerError != nil {
+			encoder.Encode(map[string]string{
+				"Error": containerError.Error(),
+			})
+		} else if hostError != nil {
+			encoder.Encode(map[string]string{
+				"Error": hostError.Error(),
+			})
+		} else {
+			encoder.Encode(map[string]interface{}{
+				"Container": container,
+				"Host":      host,
+			})
+		}
 	}
 }
