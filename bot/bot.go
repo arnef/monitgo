@@ -6,23 +6,29 @@ import (
 
 	"git.arnef.de/monitgo/alerts"
 	"git.arnef.de/monitgo/config"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/hako/durafmt"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type Bot struct {
 	chatIDs    []int64
-	api        *tgbotapi.BotAPI
+	api        *tb.Bot
 	config     config.Config
 	startTime  time.Time
 	lastAlerts alerts.Alerts
 }
 
 func New(config config.Config) Bot {
-	api, err := tgbotapi.NewBotAPI(config.Telegram.Token)
+
+	// api, err := tgbotapi.NewBotAPI(config.Telegram.Token)
+	api, err := tb.NewBot(tb.Settings{
+		Token:  config.Telegram.Token,
+		Poller: &tb.LongPoller{Timeout: 30 * time.Second},
+	})
 	if err != nil {
 		panic(err)
 	}
+
 	bot := Bot{
 		api:       api,
 		chatIDs:   []int64{},
@@ -33,11 +39,11 @@ func New(config config.Config) Bot {
 	return bot
 }
 
-func (b *Bot) reply(chatID int64, message string) {
-	msg := tgbotapi.NewMessage(chatID, message)
-	msg.ParseMode = tgbotapi.ModeHTML
-	b.api.Send(msg)
-}
+// func (b *Bot) reply(chatID int64, message string) {
+// 	msg := tgbotapi.NewMessage(chatID, message)
+// 	msg.ParseMode = tgbotapi.ModeHTML
+// 	b.api.Send(msg)
+// }
 
 func (b *Bot) isAuthorized(chatID int64) bool {
 	for _, id := range b.chatIDs {
@@ -50,89 +56,84 @@ func (b *Bot) isAuthorized(chatID int64) bool {
 
 func (b *Bot) Broadcast(message string) {
 	for _, chatID := range b.chatIDs {
-		b.reply(chatID, message)
+		b.api.Send(tb.ChatID(chatID), message, tb.ModeHTML)
 	}
 }
 
 func (b *Bot) Listen() {
 	fmt.Println("🤖 telegram bot running")
-	updateConfig := tgbotapi.NewUpdate(0)
-	updateConfig.Timeout = 30
-	updates := b.api.GetUpdatesChan(updateConfig)
+	defer b.api.Stop()
+	b.api.SetCommands([]tb.Command{
+		{
+			Text:        "uptime",
+			Description: "Print current uptime",
+		},
+		{
+			Text:        "status",
+			Description: "Print the current status",
+		},
+	})
 
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-		if update.Message.Text[0] == '/' {
-			b.handleCommand(update)
-		}
-	}
-}
-
-func (b *Bot) handleCommand(cmd tgbotapi.Update) {
-
-	if cmd.Message.Text == "/start" {
-		b.start(cmd)
-	} else if b.isAuthorized(cmd.Message.Chat.ID) {
-		if cmd.Message.Text == "/uptime" {
-			b.status(cmd)
-		} else if cmd.Message.Text == "/help" {
-			b.help(cmd)
-		} else if cmd.Message.Text == "/status" {
-			b.alerts(cmd)
+	b.api.Handle("/start", b.start)
+	b.api.Handle("/uptime", b.uptime)
+	b.api.Handle("/status", b.status)
+	b.api.Handle("/help", func(m *tb.Message) {
+		cmds, err := b.api.GetCommands()
+		var message string
+		if err != nil {
+			fmt.Println(err)
+			message = err.Error()
 		} else {
-			b.help(cmd)
+			message = "Available commands:\n"
+			for _, c := range cmds {
+				message += fmt.Sprintf("/%s - %s\n", c.Text, c.Description)
+			}
 		}
-	}
-
+		b.api.Send(m.Sender, message, tb.ModeHTML)
+	})
+	b.api.Start()
 }
 
-func (b *Bot) isAdmin(msg tgbotapi.Update) bool {
+func (b *Bot) isAdmin(msg *tb.Message) bool {
 	for _, id := range b.config.Telegram.Admin {
-		if id == msg.Message.From.ID {
+		if id == msg.Sender.ID {
 			return true
 		}
 	}
 	return false
 }
 
-func (b *Bot) start(msg tgbotapi.Update) {
+func (b *Bot) start(msg *tb.Message) {
 	inList := false
 	var message string
 	for _, id := range b.chatIDs {
-		if id == msg.Message.Chat.ID {
+		if id == msg.Chat.ID {
 			inList = true
-			message = fmt.Sprintf("Hey %s! This chat is already kept up to date!\n/help", msg.Message.From)
+			message = fmt.Sprintf("Hey %s! This chat is already kept up to date!\n/help", msg.Sender.FirstName)
 		}
 	}
 	if !inList {
 		if b.isAdmin(msg) {
-			b.chatIDs = append(b.chatIDs, msg.Message.Chat.ID)
+			b.chatIDs = append(b.chatIDs, msg.Chat.ID)
 			b.persistChatIDs()
-			message = fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Message.From)
+			message = fmt.Sprintf("Hey %s! I will now keep you up to date!\n/help", msg.Sender.FirstName)
 		} else {
-			message = fmt.Sprintf("Hey %s! You're not allowed to control this bot.", msg.Message.From)
+			message = fmt.Sprintf("Hey %s! You're not allowed to control this bot.", msg.Sender.FirstName)
 		}
 	}
-	b.reply(msg.Message.Chat.ID, message)
+	b.api.Send(msg.Sender, message, tb.ModeHTML)
 
 }
 
-func (b *Bot) alerts(msg tgbotapi.Update) {
+func (b *Bot) status(msg *tb.Message) {
 	message := b.alertsToMessage()
 	if message == "" {
 		message = "🎉️ No alerts right now!"
 	}
-	b.reply(msg.Message.Chat.ID, message)
+	b.api.Send(msg.Sender, message, tb.ModeHTML)
 }
 
-func (b *Bot) status(msg tgbotapi.Update) {
+func (b *Bot) uptime(msg *tb.Message) {
 	uptime := fmt.Sprintf("<b>Monitgo Watcher</b>\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
-	b.reply(msg.Message.Chat.ID, uptime)
-}
-
-func (b *Bot) help(msg tgbotapi.Update) {
-	message := "Available commands:\n/start - Subscribe\n/status - Print the current status\n/uptime - Print current uptime"
-	b.reply(msg.Message.Chat.ID, message)
+	b.api.Send(msg.Sender, uptime, tb.ModeHTML)
 }
