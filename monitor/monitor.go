@@ -5,7 +5,11 @@ import (
 	"time"
 )
 
-func Init(nodes []Node, sleep uint64) {
+var (
+	prev Data
+)
+
+func Init(nodes []NodeConfig, sleep uint64) {
 	if monit == nil {
 		monit = &monitor{
 			nodes: nodes,
@@ -36,7 +40,11 @@ func Start() error {
 
 func query() {
 	stats := GetStatus(monit.nodes)
-	notifyAll(stats)
+	if prev == nil {
+		prev = stats
+	} else {
+		notifyAll(stats)
+	}
 }
 
 var (
@@ -45,7 +53,7 @@ var (
 
 type monitor struct {
 	subscriber []DataReceiver
-	nodes      []Node
+	nodes      []NodeConfig
 	sleep      uint64
 }
 

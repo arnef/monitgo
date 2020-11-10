@@ -1,18 +1,14 @@
 package host
 
 type Stats struct {
-	CPULoad   []float64
-	MemUsage  Usage
-	DiskUsage Usage
+	CPU    float64
+	Memory map[string]Usage
+	Disk   map[string]Usage
 }
 
 type Usage struct {
-	// Total avaiable space in bytes
-	Total uint64
-	// Used space in bytes
-	Used uint64
-	// Percentage used * 100 / total
-	Percentage float64
+	TotalBytes uint64
+	UsedBytes  uint64
 }
 
 func GetStats() (*Stats, error) {
@@ -33,9 +29,9 @@ func GetStats() (*Stats, error) {
 	}
 
 	stats := Stats{
-		CPULoad:   cpuLoad,
-		MemUsage:  *memUsage,
-		DiskUsage: *diskUsage,
+		CPU:    cpuLoad,
+		Memory: memUsage,
+		Disk:   diskUsage,
 	}
 
 	return &stats, nil

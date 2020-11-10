@@ -10,22 +10,18 @@ import (
 	"git.arnef.de/monitgo/utils"
 )
 
-func getNormalizedLoad() ([]float64, error) {
+func getNormalizedLoad() (float64, error) {
 	cpus, err := getCPUs()
 	if err != nil || cpus == 0 {
 		fmt.Println(err)
-		cpus = 4
+		cpus = 4 // TODO get cpu count alternative
 		// return nil, err
 	}
 	load, err := getLoad()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	for i, l := range load {
-		load[i] = utils.Round(l / float64(cpus))
-		// fmt.Println(l / cpus)
-	}
-	return load, nil
+	return utils.Round(load[0] / float64(cpus)), nil
 }
 
 func getCPUs() (int, error) {

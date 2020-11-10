@@ -67,8 +67,7 @@ func (a *AlertManager) Push(data monitor.Data) {
 						},
 					}
 				}
-				for _, container := range data.Container {
-					containerID := container.ID
+				for containerID, container := range data.Container {
 					if isDown(a.prev, state, host, containerID) {
 						result[key] = append(result[key], Alert{
 							Container: container.Name,
@@ -121,12 +120,12 @@ func buildState(data monitor.Data) stateMap {
 			Error:     stats.Error,
 			Container: make(map[string]State),
 		}
-		for _, container := range stats.Container {
+		for containerID, container := range stats.Container {
 			state := Running
-			if container.MemUsage == 0 {
+			if container.Memory.UsedBytes == 0 {
 				state = Down
 			}
-			result[host].Container[container.ID] = state
+			result[host].Container[containerID] = state
 		}
 	}
 

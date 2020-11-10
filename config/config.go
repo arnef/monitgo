@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Nodes    []monitor.Node
+	Nodes    []monitor.NodeConfig
 	Telegram *Bot
 	InfluxDB *database.InfluxDB `yaml:"influxdb"`
 }

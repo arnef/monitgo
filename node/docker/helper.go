@@ -2,17 +2,6 @@ package docker
 
 import "github.com/docker/docker/api/types"
 
-func calculateNetwork(network map[string]types.NetworkStats) (uint64, uint64) {
-	var rx, tx uint64
-
-	for _, net := range network {
-		rx += net.RxBytes
-		tx += net.TxBytes
-	}
-
-	return rx, tx
-}
-
 func calculateCPUPercentUnix(previousCPU, previousSystem uint64, v *types.StatsJSON) float64 {
 	var (
 		cpuPercent = 0.0

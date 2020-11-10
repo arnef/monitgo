@@ -1,10 +1,5 @@
 package monitor
 
-import (
-	"git.arnef.de/monitgo/node/docker"
-	"git.arnef.de/monitgo/node/host"
-)
-
 type DataReceiver interface {
 	Push(data Data)
 }
@@ -12,11 +7,39 @@ type DataReceiver interface {
 type Status struct {
 	Name      string
 	Error     *string
-	Container []docker.Stats
-	Host      host.Stats
+	Container map[string]ContainerStats
+	Host      HostStats
 }
 
-type Node struct {
+func NewStatusError(err string) Status {
+	return Status{Error: &err}
+}
+
+type HostStats struct {
+	CPU    float64
+	Memory UsageStats
+	Disk   UsageStats
+}
+
+type ContainerStats struct {
+	Name    string
+	CPU     float64
+	Memory  UsageStats
+	Network NetworkStats
+}
+
+type NetworkStats struct {
+	RxBytesPerSecond uint64
+	TxBytesPerSecond uint64
+}
+
+type UsageStats struct {
+	TotalBytes uint64
+	UsedBytes  uint64
+	Percentage float64
+}
+
+type NodeConfig struct {
 	Name string
 	Host string
 	Port uint

@@ -13,13 +13,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type JsonStats struct {
+	Container map[string]docker.Stats
+	Host      host.Stats
+	Error     *string
+}
+
 // Cmd start node exporter
 func Cmd(ctx *cli.Context) error {
-	writeStats(nil, false)
 	port := ctx.Uint("port")
 	host := ctx.String("host")
 	if ctx.Bool("dry-run") {
-		time.Sleep(2 * time.Second)
 		dryRun()
 		return nil
 	}
@@ -41,31 +45,28 @@ func stats(w http.ResponseWriter, r *http.Request) {
 func writeStats(w io.Writer, pretty bool) {
 	start := time.Now()
 
-	if w != nil {
-		fmt.Print("⏳ get stats ")
-	}
+	fmt.Print("⏳ get stats ")
 	container, containerError := docker.GetStats()
 	host, hostError := host.GetStats()
 	duration := time.Since(start)
-	if w != nil {
-		fmt.Printf("took %s\n", duration)
-		encoder := json.NewEncoder(w)
-		if pretty {
-			encoder.SetIndent("", "  ")
-		}
-		if containerError != nil {
-			encoder.Encode(map[string]string{
-				"Error": containerError.Error(),
-			})
-		} else if hostError != nil {
-			encoder.Encode(map[string]string{
-				"Error": hostError.Error(),
-			})
-		} else {
-			encoder.Encode(map[string]interface{}{
-				"Container": container,
-				"Host":      host,
-			})
-		}
+	fmt.Printf("took %s\n", duration)
+
+	encoder := json.NewEncoder(w)
+	if pretty {
+		encoder.SetIndent("", "  ")
+	}
+	if containerError != nil {
+		encoder.Encode(map[string]string{
+			"Error": containerError.Error(),
+		})
+	} else if hostError != nil {
+		encoder.Encode(map[string]string{
+			"Error": hostError.Error(),
+		})
+	} else {
+		encoder.Encode(map[string]interface{}{
+			"Container": container,
+			"Host":      host,
+		})
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func getDockerStats() (map[string]Stats, error) {
+func GetStats() (map[string]Stats, error) {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -51,20 +51,30 @@ func getDockerStats() (map[string]Stats, error) {
 				// return nil, err
 			}
 
-			rx, tx := calculateNetwork(stats.Networks)
+			network := make(map[string]NetworkStats)
+			for name, net := range stats.Networks {
+				network[name] = NetworkStats{
+					TotalRxBytes: net.RxBytes,
+					TotalTxBytes: net.TxBytes,
+				}
+			}
 			cpu := calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, &stats)
-			statsMap[container.ID] = Stats{
-				ID:       container.ID[:12],
-				Name:     stats.Name[1:],
-				CPU:      utils.Round(cpu),
-				MemUsage: stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
-				NetRx:    rx,
-				NetTx:    tx,
+			id := container.ID[:12]
+			statsMap[id] = Stats{
+				ID:   id,
+				Name: stats.Name[1:],
+				CPU:  utils.Round(cpu),
+				Memory: MemoryStats{
+					TotalBytes: stats.MemoryStats.MaxUsage,
+					UsedBytes:  stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
+				},
+				Network: network,
 			}
 			wg.Done()
 		}(i)
 
 	}
 	wg.Wait()
+
 	return statsMap, statsError
 }
