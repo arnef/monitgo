@@ -16,6 +16,7 @@ func GetStats() (map[string]Stats, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer cli.Close()
 
 	containerList, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
