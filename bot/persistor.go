@@ -2,6 +2,7 @@ package bot
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -24,14 +25,17 @@ func (b *Bot) restoreChatIDs() {
 func (b *Bot) persistChatIDs() {
 	data, err := json.Marshal(b.chatIDs)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	file, err := configFile()
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
 	if err := ioutil.WriteFile(file, []byte(data), 0600); err != nil {
+		fmt.Println(err)
 		return
 	}
 }

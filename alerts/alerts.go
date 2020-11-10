@@ -1,28 +1,29 @@
 package alerts
 
 import (
-	"encoding/json"
-
 	"git.arnef.de/monitgo/monitor"
 )
 
 type AlertManager struct {
-	prev   stateMap
+	prev   *monitor.Data
 	sender []AlertSender
 }
 
 type State int
 
 const (
-	Error         State = 0
-	ErrorResolved State = 1
-	Running       State = 2
-	Down          State = 3
-	Away          State = 4
+	Error           State = 0
+	ErrorResolved   State = 1
+	Running         State = 2
+	Down            State = 3
+	Away            State = 4
+	Warning         State = 5
+	WarningResolved State = 6
 )
 
 type Alert struct {
-	Error     *string
+	Error     string
+	Warning   string
 	Container string
 	State     State
 }
@@ -40,111 +41,172 @@ func (a *AlertManager) notify(alerts Alerts) {
 }
 
 func (a *AlertManager) Push(data monitor.Data) {
+	alerts := make(map[string][]Alert)
+	for host, node := range data {
+		if node.Error != nil {
+			alerts[node.Name] = append(alerts[node.Name], Alert{
+				Error: *node.Error,
+				State: Error,
+			})
+		} else {
+			if yes, err := a.errorResolved(host, node); yes {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Error: *err,
+					State: ErrorResolved,
+				})
+			}
+			if a.highCPUUsageOccurred(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High CPU usage",
+					State:   Warning,
+				})
+			}
+			if a.highCPUUsageResolved(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High CPU usage",
+					State:   WarningResolved,
+				})
+			}
 
-	result := make(Alerts)
+			if a.highDiskUsageOccurred(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High Disk usage",
+					State:   Warning,
+				})
+			}
+			if a.highDiskUsageResolved(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High Disk usage",
+					State:   WarningResolved,
+				})
+			}
 
-	state := buildState(data)
-	if didChange(a.prev, state) {
-		for host, data := range data {
-			key := data.Name
-			if data.Error != nil {
-				if isHostError(a.prev, state, host) {
-					result[key] = []Alert{
-						{
-							Container: "",
-							State:     Error,
-							Error:     data.Error,
-						},
-					}
+			if a.highMemoryUsageOccurred(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High Memory usage",
+					State:   Warning,
+				})
+			}
+			if a.highMemoryUsageResolved(host, node.Host) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Warning: "High Memory usage",
+					State:   WarningResolved,
+				})
+			}
+
+			for id, container := range node.Container {
+				if a.containerWentDown(host, id, container) {
+					alerts[node.Name] = append(alerts[node.Name], Alert{
+						Container: container.Name,
+						State:     Down,
+					})
 				}
-			} else {
-				if isHostErrorResolved(a.prev, state, host) {
-					result[key] = []Alert{
-						{
-							Container: "",
-							State:     ErrorResolved,
-							Error:     a.prev[host].Error,
-						},
-					}
+				if a.containerWentUpAgin(host, id, container) {
+					alerts[node.Name] = append(alerts[node.Name], Alert{
+						Container: container.Name,
+						State:     Running,
+					})
 				}
-				for containerID, container := range data.Container {
-					if isDown(a.prev, state, host, containerID) {
-						result[key] = append(result[key], Alert{
-							Container: container.Name,
-							State:     Down,
-						})
-					} else if isUpAgain(a.prev, state, host, containerID) {
-						result[key] = append(result[key], Alert{
-							Container: container.Name,
-							State:     Running,
-						})
-					}
+			}
+
+			for _, name := range a.getTrashedContainer(host, node.Container) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Container: name,
+					State:     Away,
+				})
+			}
+		}
+	}
+	a.prev = &data
+
+	a.notify(alerts)
+}
+
+func (a *AlertManager) getTrashedContainer(host string, container map[string]monitor.ContainerStats) []string {
+	var names []string
+
+	if a.prev != nil {
+		if p, ok := (*a.prev)[host]; ok {
+			for id, con := range p.Container {
+				if _, ok := container[id]; !ok {
+					names = append(names, con.Name)
 				}
 			}
 		}
-		a.prev = state
-		a.notify(result)
 	}
+
+	return names
 }
 
-func isHostError(prev stateMap, cur stateMap, host string) bool {
-	return cur[host].Error != nil && (prev == nil || prev[host].Error == nil)
+func (a *AlertManager) errorResolved(key string, node monitor.Status) (bool, *string) {
+	if node.Error == nil && a.prev != nil {
+		if val, ok := (*a.prev)[key]; ok {
+			if val.Error != nil {
+				return true, val.Error
+			}
+
+		}
+	}
+	return false, nil
 }
 
-func isHostErrorResolved(prev stateMap, cur stateMap, host string) bool {
-	return cur[host].Error == nil && prev != nil && prev[host].Error != nil
+func (a *AlertManager) highDiskUsageOccurred(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return host.Disk.Percentage > 80 && (p == nil || p.Disk.Percentage <= 80)
+}
+func (a *AlertManager) highDiskUsageResolved(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return p != nil && p.Disk.Percentage > 80 && host.Disk.Percentage <= 80
 }
 
-func isDown(prev stateMap, cur stateMap, host string, containerID string) bool {
-	return cur[host].Container[containerID] == Down && (prev == nil || prev[host].Container[containerID] != Down)
+func (a *AlertManager) highMemoryUsageOccurred(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return host.Memory.Percentage > 80 && (p == nil || p.Memory.Percentage <= 80)
+}
+func (a *AlertManager) highMemoryUsageResolved(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return p != nil && p.Memory.Percentage > 80 && host.Memory.Percentage <= 80
 }
 
-func isUpAgain(prev stateMap, cur stateMap, host string, containerID string) bool {
-	return prev != nil && prev[host].Container[containerID] == Down && cur[host].Container[containerID] == Running
+func (a *AlertManager) highCPUUsageOccurred(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return host.CPU > 80 && (p == nil || p.CPU <= 80)
+}
+func (a *AlertManager) highCPUUsageResolved(key string, host monitor.HostStats) bool {
+	p := a.getPreviousHost(key)
+	return p != nil && p.CPU > 80 && host.CPU <= 80
+}
+
+func (a *AlertManager) containerWentDown(host string, id string, container monitor.ContainerStats) bool {
+	p := a.getPreviousContainer(host, id)
+	return container.Memory.UsedBytes == 0 && (p == nil || p.Memory.UsedBytes > 0)
+}
+
+func (a *AlertManager) containerWentUpAgin(host string, id string, container monitor.ContainerStats) bool {
+	p := a.getPreviousContainer(host, id)
+	return p != nil && p.Memory.UsedBytes == 0 && container.Memory.UsedBytes > 0
+}
+
+func (a *AlertManager) getPreviousHost(host string) *monitor.HostStats {
+	if a.prev != nil {
+		if h, ok := (*a.prev)[host]; ok {
+			return &h.Host
+		}
+	}
+	return nil
+}
+
+func (a *AlertManager) getPreviousContainer(host string, id string) *monitor.ContainerStats {
+	if a.prev != nil {
+		if _, ok := (*a.prev)[host]; ok {
+			if val, ok := (*a.prev)[host].Container[id]; ok {
+				return &val
+			}
+		}
+	}
+	return nil
 }
 
 type AlertSender interface {
 	SendAlerts(alerts Alerts)
-}
-
-type state struct {
-	Error     *string
-	Container map[string]State
-}
-type stateMap map[string]state
-
-func buildState(data monitor.Data) stateMap {
-	result := make(stateMap)
-	for host, stats := range data {
-		result[host] = state{
-			Error:     stats.Error,
-			Container: make(map[string]State),
-		}
-		for containerID, container := range stats.Container {
-			state := Running
-			if container.Memory.UsedBytes == 0 {
-				state = Down
-			}
-			result[host].Container[containerID] = state
-		}
-	}
-
-	return result
-}
-
-func didChange(prev stateMap, cur stateMap) bool {
-	if prev == nil {
-		return true
-	}
-
-	p, err := json.Marshal(prev)
-	if err != nil {
-		return true
-	}
-	c, err := json.Marshal(cur)
-	if err != nil {
-		panic(err)
-	}
-	return string(c) != string(p)
-
 }

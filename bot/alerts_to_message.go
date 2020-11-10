@@ -21,9 +21,14 @@ func (b *Bot) alertsToMessage() string {
 				case a.Running:
 					message += fmt.Sprintf("🚀️ <i>%s</i> is up again\n", alert.Container)
 				case a.Error:
-					message += fmt.Sprintf("❗️ %s", *alert.Error)
+					message += fmt.Sprintf("❗️ %s", alert.Error)
 				case a.ErrorResolved:
-					message += fmt.Sprintf("✅️ <s>%s</s>\n", *alert.Error)
+					message += fmt.Sprintf("✅️ <s>%s</s>\n", alert.Error)
+				case a.Warning:
+					message += fmt.Sprintf("⚠️ %s\n", alert.Warning)
+				case a.WarningResolved:
+					message += fmt.Sprintf("💚 <s>%s</s>", alert.Warning)
+
 				}
 			}
 		}

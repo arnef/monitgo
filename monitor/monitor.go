@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-var (
-	prev Data
-)
-
 func Init(nodes []NodeConfig, sleep uint64) {
 	if monit == nil {
 		monit = &monitor{
@@ -40,9 +36,7 @@ func Start() error {
 
 func query() {
 	stats := GetStatus(monit.nodes)
-	if prev == nil {
-		prev = stats
-	} else {
+	if stats != nil {
 		notifyAll(stats)
 	}
 }

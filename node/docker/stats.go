@@ -22,7 +22,7 @@ func GetStats() (map[string]Stats, error) {
 		return nil, err
 	}
 
-	statsMap := make(map[string]Stats)
+	statsList := make([]Stats, len(containerList))
 	wg := sync.WaitGroup{}
 	var statsError error
 	for i := range containerList {
@@ -60,7 +60,7 @@ func GetStats() (map[string]Stats, error) {
 			}
 			cpu := calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, &stats)
 			id := container.ID[:12]
-			statsMap[id] = Stats{
+			statsList[i] = Stats{
 				ID:   id,
 				Name: stats.Name[1:],
 				CPU:  utils.Round(cpu),
@@ -75,6 +75,9 @@ func GetStats() (map[string]Stats, error) {
 
 	}
 	wg.Wait()
-
+	statsMap := make(map[string]Stats)
+	for _, s := range statsList {
+		statsMap[s.ID] = s
+	}
 	return statsMap, statsError
 }
