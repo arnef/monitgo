@@ -44,10 +44,12 @@ func (a *AlertManager) Push(data monitor.Data) {
 	alerts := make(map[string][]Alert)
 	for host, node := range data {
 		if node.Error != nil {
-			alerts[node.Name] = append(alerts[node.Name], Alert{
-				Error: *node.Error,
-				State: Error,
-			})
+			if a.errorOccoured(host, node) {
+				alerts[node.Name] = append(alerts[node.Name], Alert{
+					Error: *node.Error,
+					State: Error,
+				})
+			}
 		} else {
 			if yes, err := a.errorResolved(host, node); yes {
 				alerts[node.Name] = append(alerts[node.Name], Alert{
@@ -136,6 +138,19 @@ func (a *AlertManager) getTrashedContainer(host string, container map[string]mon
 	}
 
 	return names
+}
+
+func (a *AlertManager) errorOccoured(key string, node monitor.Status) bool {
+	if node.Error != nil {
+		if a.prev == nil {
+			return true
+		}
+		if val, ok := (*a.prev)[key]; ok {
+			return val.Error == nil
+		}
+	}
+
+	return false
 }
 
 func (a *AlertManager) errorResolved(key string, node monitor.Status) (bool, *string) {
