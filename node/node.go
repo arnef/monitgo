@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"time"
 
 	"git.arnef.de/monitgo/node/docker"
 	"git.arnef.de/monitgo/node/host"
@@ -43,13 +42,9 @@ func stats(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeStats(w io.Writer, pretty bool) {
-	start := time.Now()
 
-	fmt.Print("⏳ get stats ")
 	container, containerError := docker.GetStats()
 	host, hostError := host.GetStats()
-	duration := time.Since(start)
-	fmt.Printf("took %s\n", duration)
 
 	encoder := json.NewEncoder(w)
 	if pretty {
