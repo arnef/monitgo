@@ -28,6 +28,5 @@ func Get(path string) Config {
 	}
 	var config Config
 	yaml.Unmarshal(raw, &config)
-	fmt.Println(config.Telegram)
 	return config
 }

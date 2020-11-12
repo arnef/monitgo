@@ -33,7 +33,6 @@ func Init(influxdb InfluxDB) {
 }
 
 func (db *InfluxDB) Push(data monitor.Data) {
-	fmt.Println("[DEBUG] write data")
 	if client != nil {
 		writeAPI := (*client).WriteAPI(db.Organization, db.DatabaseName)
 		now := time.Now()
