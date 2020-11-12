@@ -39,12 +39,6 @@ func New(config config.Config) Bot {
 	return bot
 }
 
-// func (b *Bot) reply(chatID int64, message string) {
-// 	msg := tgbotapi.NewMessage(chatID, message)
-// 	msg.ParseMode = tgbotapi.ModeHTML
-// 	b.api.Send(msg)
-// }
-
 func (b *Bot) isAuthorized(chatID int64) bool {
 	for _, id := range b.chatIDs {
 		if id == chatID {
@@ -89,9 +83,13 @@ func (b *Bot) Listen() {
 				message += fmt.Sprintf("/%s - %s\n", c.Text, c.Description)
 			}
 		}
-		b.api.Send(m.Sender, message, tb.ModeHTML)
+		b.send(m, message)
 	})
 	b.api.Start()
+}
+
+func (b *Bot) send(msg *tb.Message, message string) {
+	b.api.Send(tb.ChatID(msg.Chat.ID), message, tb.ModeHTML)
 }
 
 func (b *Bot) isAdmin(msg *tb.Message) bool {
@@ -121,7 +119,7 @@ func (b *Bot) start(msg *tb.Message) {
 			message = fmt.Sprintf("Hey %s! You're not allowed to control this bot.", msg.Sender.FirstName)
 		}
 	}
-	b.api.Send(msg.Sender, message, tb.ModeHTML)
+	b.send(msg, message)
 
 }
 
@@ -130,10 +128,10 @@ func (b *Bot) status(msg *tb.Message) {
 	if message == "" {
 		message = "🎉️ No alerts right now!"
 	}
-	b.api.Send(msg.Sender, message, tb.ModeHTML)
+	b.send(msg, message)
 }
 
 func (b *Bot) uptime(msg *tb.Message) {
 	uptime := fmt.Sprintf("<b>Monitgo Watcher</b>\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
-	b.api.Send(msg.Sender, uptime, tb.ModeHTML)
+	b.send(msg, uptime)
 }
