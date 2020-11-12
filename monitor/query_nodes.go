@@ -20,19 +20,22 @@ var (
 type rawData map[string]node.JsonStats
 
 func GetStatus(nodes []NodeConfig) Data {
-	var status Data = make(Data)
+	// var status Data = make(Data)
+	status := make([]Status, len(nodes))
 	now := time.Now()
 	wg := sync.WaitGroup{}
-	raw := make(rawData)
+	// raw := make(rawData)
+	raw := make([]node.JsonStats, len(nodes))
+
 	for i := range nodes {
 		wg.Add(1)
 		go func(i int) {
 			rawNode, err := queryNode(nodes[i])
 			if err != nil {
-				status[nodes[i].Host] = NewStatusError(err.Error())
+				status[i] = NewStatusError(err.Error())
 			} else {
-				raw[nodes[i].Host] = *rawNode
-				status[nodes[i].Host] = processNode(nodes[i].Host, nodes[i].Name, *rawNode, now)
+				raw[i] = *rawNode
+				status[i] = processNode(nodes[i].Host, nodes[i].Name, *rawNode, now)
 			}
 			wg.Done()
 		}(i)
@@ -41,7 +44,12 @@ func GetStatus(nodes []NodeConfig) Data {
 
 	initQuery := prev == nil
 
-	prev = raw
+	prev = make(map[string]node.JsonStats)
+	for i, r := range raw {
+		if i < len(nodes) {
+			prev[nodes[i].Host] = r
+		}
+	}
 
 	timestamp = now
 
@@ -49,7 +57,13 @@ func GetStatus(nodes []NodeConfig) Data {
 		return nil
 	}
 
-	return status
+	data := make(Data)
+	for i, d := range status {
+		if i < len(nodes) {
+			data[nodes[i].Host] = d
+		}
+	}
+	return data
 }
 
 func processNode(host string, name string, data node.JsonStats, now time.Time) Status {
