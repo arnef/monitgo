@@ -78,7 +78,7 @@ func GetStats() (map[string]Stats, error) {
 	wg.Wait()
 	statsMap := make(map[string]Stats)
 	for _, s := range statsList {
-		statsMap[s.ID] = s
+		statsMap[s.Name] = s
 	}
 	return statsMap, statsError
 }
