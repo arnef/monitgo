@@ -12,6 +12,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/influxdata/influxdb-client-go/v2 v2.2.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/sirupsen/logrus v1.4.1
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b

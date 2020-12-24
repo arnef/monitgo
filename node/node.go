@@ -10,6 +10,8 @@ import (
 	"git.arnef.de/monitgo/node/docker"
 	"git.arnef.de/monitgo/node/host"
 	"github.com/urfave/cli/v2"
+
+	"git.arnef.de/monitgo/log"
 )
 
 type JsonStats struct {
@@ -27,7 +29,7 @@ func Cmd(ctx *cli.Context) error {
 		return nil
 	}
 	http.HandleFunc("/stats", stats)
-	fmt.Printf("🚀️ running at %s:%d\n", host, port)
+	log.Infof("🚀️ running at %s:%d\n", host, port)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 
 }

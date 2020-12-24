@@ -6,10 +6,10 @@ import (
 	a "git.arnef.de/monitgo/alerts"
 )
 
-func (b *Bot) alertsToMessage() string {
+func (b *Bot) alertsToMessage(alerts a.Alerts) string {
 	message := ""
 
-	for host, alerts := range b.lastAlerts {
+	for host, alerts := range alerts {
 		if len(alerts) > 0 {
 			message += fmt.Sprintf("<b>%s</b>\n", host)
 			for _, alert := range alerts {

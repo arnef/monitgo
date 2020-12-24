@@ -11,11 +11,12 @@ import (
 )
 
 type Bot struct {
-	chatIDs    []int64
-	api        *tb.Bot
-	config     config.Config
-	startTime  time.Time
-	lastAlerts alerts.Alerts
+	chatIDs   []int64
+	api       *tb.Bot
+	config    config.Config
+	startTime time.Time
+	// lastAlerts alerts.Alerts
+	statusAlerts alerts.Alerts
 }
 
 func New(config config.Config) Bot {
@@ -124,7 +125,7 @@ func (b *Bot) start(msg *tb.Message) {
 }
 
 func (b *Bot) status(msg *tb.Message) {
-	message := b.alertsToMessage()
+	message := b.alertsToMessage(b.statusAlerts)
 	if message == "" {
 		message = "🎉️ No alerts right now!"
 	}

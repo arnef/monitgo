@@ -11,19 +11,32 @@ import (
 	"git.arnef.de/monitgo/monitor"
 	"git.arnef.de/monitgo/node"
 	"github.com/urfave/cli/v2"
+
+	"git.arnef.de/monitgo/log"
 )
 
-type Logger struct{}
-
-func (l *Logger) Push(data monitor.Data) {
-	fmt.Println(data)
-}
-
 func main() {
+	/// setup logger
+	log.SetOutput(os.Stdout)
+
 	err := (&cli.App{
 		Version: "0.1.0",
 		Name:    "monit",
 		Usage:   "Monitoring Docker",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "debug",
+				Aliases: []string{"vv"},
+			},
+		},
+		Before: func(ctx *cli.Context) error {
+			if ctx.Bool("debug") {
+				log.SetLevel(log.DebugLevel)
+			} else {
+				log.SetLevel(log.InfoLevel)
+			}
+			return nil
+		},
 		Commands: []*cli.Command{
 			{
 				Name:  "node",

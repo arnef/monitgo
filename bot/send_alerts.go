@@ -5,7 +5,14 @@ import (
 )
 
 func (b *Bot) SendAlerts(alerts a.Alerts) {
-	b.lastAlerts = alerts
-	message := b.alertsToMessage()
+	message := b.alertsToMessage(alerts)
 	b.Broadcast(message)
+}
+
+func (b *Bot) SaveStatus(alerts a.Alerts) {
+	b.statusAlerts = alerts
+}
+
+func isErrorAlert(alert a.Alert) bool {
+	return alert.State == a.Error || alert.State == a.Down || alert.State == a.Warning
 }

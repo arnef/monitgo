@@ -20,7 +20,8 @@ func Exec(cmd string, args ...string) ([]byte, error) {
 		Args:   append([]string{path}, args...),
 	}
 	err = exe.Run()
-	if err != nil {
+	// fmt.Println(outb, err)
+	if err != nil && outb.Len() == 0 {
 		return nil, fmt.Errorf(errb.String())
 	}
 
