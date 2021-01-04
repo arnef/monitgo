@@ -26,51 +26,54 @@ func GetStats() (map[string]Stats, error) {
 		return nil, err
 	}
 
-	statsList := make([]Stats, len(containerList))
+	statsList := make([]*Stats, len(containerList))
 	wg := sync.WaitGroup{}
 	var statsError error
 	for i := range containerList {
 		wg.Add(1)
 		go func(i int) {
-			container := containerList[i]
-			resp, err := cli.ContainerStats(ctx, container.ID, false)
-			if err != nil {
-				statsError = err
-				log.Debug(err)
-				wg.Done()
-				return
-			}
-			defer resp.Body.Close()
+			if _, ignore := containerList[i].Labels["monitgo.ignore"]; !ignore {
 
-			var stats types.StatsJSON
-
-			err = json.NewDecoder(resp.Body).Decode(&stats)
-
-			if err != nil {
-				statsError = err
-				log.Debug(err)
-				wg.Done()
-				return
-			}
-
-			network := make(map[string]NetworkStats)
-			for name, net := range stats.Networks {
-				network[name] = NetworkStats{
-					TotalRxBytes: net.RxBytes,
-					TotalTxBytes: net.TxBytes,
+				container := containerList[i]
+				resp, err := cli.ContainerStats(ctx, container.ID, false)
+				if err != nil {
+					statsError = err
+					log.Debug(err)
+					wg.Done()
+					return
 				}
-			}
-			cpu := calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, &stats)
-			id := container.ID[:12]
-			statsList[i] = Stats{
-				ID:   id,
-				Name: stats.Name[1:],
-				CPU:  utils.Round(cpu),
-				Memory: MemoryStats{
-					TotalBytes: stats.MemoryStats.MaxUsage,
-					UsedBytes:  stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
-				},
-				Network: network,
+				defer resp.Body.Close()
+
+				var stats types.StatsJSON
+
+				err = json.NewDecoder(resp.Body).Decode(&stats)
+
+				if err != nil {
+					statsError = err
+					log.Debug(err)
+					wg.Done()
+					return
+				}
+
+				network := make(map[string]NetworkStats)
+				for name, net := range stats.Networks {
+					network[name] = NetworkStats{
+						TotalRxBytes: net.RxBytes,
+						TotalTxBytes: net.TxBytes,
+					}
+				}
+				cpu := calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, &stats)
+				id := container.ID[:12]
+				statsList[i] = &Stats{
+					ID:   id,
+					Name: stats.Name[1:],
+					CPU:  utils.Round(cpu),
+					Memory: MemoryStats{
+						TotalBytes: stats.MemoryStats.MaxUsage,
+						UsedBytes:  stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
+					},
+					Network: network,
+				}
 			}
 			wg.Done()
 		}(i)
@@ -79,7 +82,9 @@ func GetStats() (map[string]Stats, error) {
 	wg.Wait()
 	statsMap := make(map[string]Stats)
 	for _, s := range statsList {
-		statsMap[s.Name] = s
+		if s != nil {
+			statsMap[s.Name] = *s
+		}
 	}
 	if statsError != nil {
 		log.Debug(statsError)
