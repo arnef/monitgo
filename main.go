@@ -20,7 +20,7 @@ func main() {
 	log.SetOutput(os.Stdout)
 
 	err := (&cli.App{
-		Version: "0.1.0",
+		Version: "0.2.0",
 		Name:    "monit",
 		Usage:   "Monitoring Docker",
 		Flags: []cli.Flag{
