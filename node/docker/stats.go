@@ -37,10 +37,8 @@ func GetStats() (map[string]Stats, error) {
 			if err != nil {
 				statsError = err
 				log.Debug(err)
-				// panic(err)
 				wg.Done()
 				return
-				// return nil, err
 			}
 			defer resp.Body.Close()
 
@@ -51,10 +49,8 @@ func GetStats() (map[string]Stats, error) {
 			if err != nil {
 				statsError = err
 				log.Debug(err)
-				// panic(err)
 				wg.Done()
 				return
-				// return nil, err
 			}
 
 			network := make(map[string]NetworkStats)
