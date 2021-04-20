@@ -1,3 +1,7 @@
+git.arnef.de/arnef/talkbot v0.0.0-20210302131752-bd4a25fcc5d5 h1:F0OB3cllSPf3+/CsNhTFCKTfYAqtWFNtvFWwP7uRX7c=
+git.arnef.de/arnef/talkbot v0.0.0-20210302131752-bd4a25fcc5d5/go.mod h1:mv1kOgzU8aw723tShezQew01YZYfJoIYnMxcqr6zYAU=
+git.arnef.de/arnef/talkbot v1.0.1 h1:yPqspN1Tf7UdCqeYEVM9hbxUiTOntT9J7hMLSA8oo5Y=
+git.arnef.de/arnef/talkbot v1.0.1/go.mod h1:mv1kOgzU8aw723tShezQew01YZYfJoIYnMxcqr6zYAU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Microsoft/go-winio v0.4.15 h1:qkLXKzb1QoVatRyd/YlXZ/Kg0m5K3SPuoD82jjSOaBc=
 github.com/Microsoft/go-winio v0.4.15/go.mod h1:tTuCMEN+UleMWgg9dVx4Hu52b1bJo+59jBh3ajtinzw=
@@ -29,6 +33,7 @@ github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.0.0-rc1/go.mod h1:2s/IzRcx
 github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219/go.mod h1:/X8TswGSh1pIozq4ZwCfxS0WA5JGXguxk94ar/4c87Y=
 github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026 h1:BpJ2o0OR5FV7vrkDYfXYVJQeMNWa8RhklZOpW2ITAIQ=
 github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026/go.mod h1:5Scbynm8dF1XAPwIwkGPqzkM/shndPm79Jd1003hTjE=
+github.com/helloeave/json v1.15.3/go.mod h1:uTHhuUsgnrpm9cc7Gi3tfIUwgf1dq/7+uLfpUFLBFEQ=
 github.com/influxdata/influxdb-client-go v1.4.0 h1:+KavOkwhLClHFfYcJMHHnTL5CZQhXJzOm5IKHI9BqJk=
 github.com/influxdata/influxdb-client-go/v2 v2.2.0 h1:2R/le0s/MZpHtc+ijuXKe2c4KGN14M85mWtGlmg6vec=
 github.com/influxdata/influxdb-client-go/v2 v2.2.0/go.mod h1:fa/d1lAdUHxuc1jedx30ZfNG573oQTQmUni3N6pcW+0=
@@ -73,6 +78,8 @@ github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/X
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
 github.com/valyala/fasttemplate v1.1.0/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
+github.com/zenthangplus/goccm v0.0.0-20200608171100-39e9e08b694a h1:zxtrEyAn+PXzLBBXUrjamhu1+ZdkOt0nltXvCWh7JvY=
+github.com/zenthangplus/goccm v0.0.0-20200608171100-39e9e08b694a/go.mod h1:PPYr3s9FhH/9fs7kfozlHKs2VXzk4Foyzb3Mke/Bg0U=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20191112222119-e1110fd1c708/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	ntb "git.arnef.de/arnef/talkbot/pkg"
 	"git.arnef.de/monitgo/alerts"
 	"git.arnef.de/monitgo/config"
 	"github.com/hako/durafmt"
@@ -12,7 +13,8 @@ import (
 
 type Bot struct {
 	chatIDs   []int64
-	api       *tb.Bot
+	telegram  *tb.Bot
+	talk      *ntb.Bot
 	config    config.Config
 	startTime time.Time
 	// lastAlerts alerts.Alerts
@@ -22,16 +24,35 @@ type Bot struct {
 func New(config config.Config) Bot {
 
 	// api, err := tgbotapi.NewBotAPI(config.Telegram.Token)
-	api, err := tb.NewBot(tb.Settings{
-		Token:  config.Telegram.Token,
-		Poller: &tb.LongPoller{Timeout: 30 * time.Second},
-	})
-	if err != nil {
-		panic(err)
+	var telegram *tb.Bot
+	var talk *ntb.Bot
+	if config.Telegram != nil {
+		t, err := tb.NewBot(tb.Settings{
+			Token:  config.Telegram.Token,
+			Poller: &tb.LongPoller{Timeout: 30 * time.Second},
+		})
+		if err != nil {
+			panic(err)
+		}
+		telegram = t
+	}
+	if config.Talk != nil {
+		t, err := ntb.NewBot(ntb.Settings{
+			URL:      config.Talk.URL,
+			Username: config.Talk.Username,
+			BotUID:   config.Talk.BotID,
+			Password: config.Talk.Password,
+			ChatID:   config.Talk.ChatID,
+		})
+		if err != nil {
+			panic(err)
+		}
+		talk = t
 	}
 
 	bot := Bot{
-		api:       api,
+		telegram:  telegram,
+		talk:      talk,
 		chatIDs:   []int64{},
 		config:    config,
 		startTime: time.Now(),
@@ -49,48 +70,78 @@ func (b *Bot) isAuthorized(chatID int64) bool {
 	return false
 }
 
-func (b *Bot) Broadcast(message string) {
-	for _, chatID := range b.chatIDs {
-		b.api.Send(tb.ChatID(chatID), message, tb.ModeHTML)
+func (b *Bot) Broadcast(raw string, message string) {
+	if b.telegram != nil {
+		for _, chatID := range b.chatIDs {
+			b.telegram.Send(tb.ChatID(chatID), message, tb.ModeHTML)
+		}
 	}
+	if b.talk != nil {
+		b.talk.Send(raw)
+	}
+
 }
 
 func (b *Bot) Listen() {
-	fmt.Println("🤖 telegram bot running")
-	defer b.api.Stop()
-	b.api.SetCommands([]tb.Command{
-		{
-			Text:        "uptime",
-			Description: "Print current uptime",
-		},
-		{
-			Text:        "status",
-			Description: "Print the current status",
-		},
-	})
 
-	b.api.Handle("/start", b.start)
-	b.api.Handle("/uptime", b.uptime)
-	b.api.Handle("/status", b.status)
-	b.api.Handle("/help", func(m *tb.Message) {
-		cmds, err := b.api.GetCommands()
-		var message string
-		if err != nil {
-			fmt.Println(err)
-			message = err.Error()
-		} else {
-			message = "Available commands:\n"
-			for _, c := range cmds {
-				message += fmt.Sprintf("/%s - %s\n", c.Text, c.Description)
+	if b.telegram != nil {
+		fmt.Println("🤖 telegram bot running")
+		defer b.telegram.Stop()
+		b.telegram.SetCommands([]tb.Command{
+			{
+				Text:        "uptime",
+				Description: "Print current uptime",
+			},
+			{
+				Text:        "status",
+				Description: "Print the current status",
+			},
+		})
+
+		b.telegram.Handle("/start", b.start)
+		b.telegram.Handle("/uptime", func(msg *tb.Message) {
+			_, uptime := b.uptime()
+			b.send(msg, uptime)
+		})
+		b.telegram.Handle("/status", b.status)
+		b.telegram.Handle("/help", func(m *tb.Message) {
+			cmds, err := b.telegram.GetCommands()
+			var message string
+			if err != nil {
+				fmt.Println(err)
+				message = err.Error()
+			} else {
+				message = "Available commands:\n"
+				for _, c := range cmds {
+					message += fmt.Sprintf("/%s - %s\n", c.Text, c.Description)
+				}
 			}
-		}
-		b.send(m, message)
-	})
-	b.api.Start()
+			b.send(m, message)
+		})
+		go b.telegram.Start()
+	}
+	if b.talk != nil {
+		fmt.Println("🤖 talk bot running")
+		defer b.talk.Stop()
+		b.talk.Handle("uptime", func(_ ntb.Message) {
+			raw, _ := b.uptime()
+			b.talk.Send(raw)
+		})
+		b.talk.Handle("status", func(_ ntb.Message) {
+			b.status(nil)
+		})
+		b.talk.Start()
+	}
+
 }
 
 func (b *Bot) send(msg *tb.Message, message string) {
-	b.api.Send(tb.ChatID(msg.Chat.ID), message, tb.ModeHTML)
+	if b.telegram != nil && msg != nil {
+		b.telegram.Send(tb.ChatID(msg.Chat.ID), message, tb.ModeHTML)
+	}
+	if b.talk != nil {
+		b.talk.Send(message)
+	}
 }
 
 func (b *Bot) isAdmin(msg *tb.Message) bool {
@@ -125,14 +176,20 @@ func (b *Bot) start(msg *tb.Message) {
 }
 
 func (b *Bot) status(msg *tb.Message) {
-	message := b.alertsToMessage(b.statusAlerts)
+	raw, message := b.alertsToMessage(b.statusAlerts)
 	if message == "" {
 		message = "🎉️ No alerts right now!"
+		raw = message
 	}
-	b.send(msg, message)
+	if msg != nil {
+		b.send(msg, message)
+	} else {
+		b.send(nil, raw)
+	}
 }
 
-func (b *Bot) uptime(msg *tb.Message) {
-	uptime := fmt.Sprintf("<b>Monitgo Watcher</b>\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
-	b.send(msg, uptime)
+func (b *Bot) uptime() (string, string) {
+	uptimeHtml := fmt.Sprintf("<b>Monitgo Watcher</b>\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
+	uptimeRaw := fmt.Sprintf("Monitgo Watcher\nUptime: %s\n", durafmt.ParseShort(time.Since(b.startTime)))
+	return uptimeRaw, uptimeHtml
 }

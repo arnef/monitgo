@@ -6,32 +6,40 @@ import (
 	a "git.arnef.de/monitgo/alerts"
 )
 
-func (b *Bot) alertsToMessage(alerts a.Alerts) string {
+func (b *Bot) alertsToMessage(alerts a.Alerts) (string, string) {
 	message := ""
-
+	raw := ""
 	for host, alerts := range alerts {
 		if len(alerts) > 0 {
 			message += fmt.Sprintf("<b>%s</b>\n", host)
+			raw += fmt.Sprintf("%s\n", host)
 			for _, alert := range alerts {
 				switch alert.State {
 				case a.Down:
 					message += fmt.Sprintf("🔥️ <i>%s</i> is down\n", alert.Container)
+					raw += fmt.Sprintf("🔥️ %s is down\n", alert.Container)
 				case a.Away:
 					message += fmt.Sprintf("🗑️ <i>%s</i> removed\n", alert.Container)
+					raw += fmt.Sprintf("🗑️ %s removed\n", alert.Container)
 				case a.Running:
 					message += fmt.Sprintf("🚀️ <i>%s</i> is up again\n", alert.Container)
+					raw += fmt.Sprintf("🚀️ %s is up again\n", alert.Container)
 				case a.Error:
-					message += fmt.Sprintf("❗️ %s", alert.Error)
+					message += fmt.Sprintf("❗️ %s\n", alert.Error)
+					raw += fmt.Sprintf("❗️ %s\n", alert.Error)
 				case a.ErrorResolved:
 					message += fmt.Sprintf("✅️ <s>%s</s>\n", alert.Error)
+					raw += fmt.Sprintf("✅️ %s\n", alert.Error)
 				case a.Warning:
 					message += fmt.Sprintf("⚠️ %s\n", alert.Warning)
+					raw += fmt.Sprintf("⚠️ %s\n", alert.Warning)
 				case a.WarningResolved:
-					message += fmt.Sprintf("💚 <s>%s</s>", alert.Warning)
+					message += fmt.Sprintf("💚 <s>%s</s>\n", alert.Warning)
+					raw += fmt.Sprintf("💚 %s\n", alert.Warning)
 
 				}
 			}
 		}
 	}
-	return message
+	return raw, message
 }

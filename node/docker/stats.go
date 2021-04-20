@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"git.arnef.de/monitgo/log"
@@ -18,28 +19,43 @@ func GetStats() (map[string]Stats, error) {
 		log.Debug(err)
 		return nil, err
 	}
-	defer cli.Close()
+	// defer cli.Close()
+	// defer ctx.Done()
+	defer func() { fmt.Println("GetStats Done") }()
 
 	containerList, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		log.Debug(err)
 		return nil, err
 	}
-
+	cli.Close()
+	ctx.Done()
 	statsList := make([]*Stats, len(containerList))
 	wg := sync.WaitGroup{}
+	// wg := goccm.New(10)
 	var statsError error
 	for i := range containerList {
 		wg.Add(1)
+		// wg.Wait()
 		go func(i int) {
+			defer wg.Done()
 			if _, ignore := containerList[i].Labels["monitgo.ignore"]; !ignore {
-
+				ctx := context.Background()
+				cli, err := client.NewEnvClient()
+				if err != nil {
+					log.Debug(err)
+					statsError = err
+					return
+					// return nil, err
+				}
+				defer cli.Close()
+				defer ctx.Done()
 				container := containerList[i]
+				log.Debug("get container stats %v", container.Names)
 				resp, err := cli.ContainerStats(ctx, container.ID, false)
 				if err != nil {
 					statsError = err
 					log.Debug(err)
-					wg.Done()
 					return
 				}
 				defer resp.Body.Close()
@@ -51,7 +67,6 @@ func GetStats() (map[string]Stats, error) {
 				if err != nil {
 					statsError = err
 					log.Debug(err)
-					wg.Done()
 					return
 				}
 
@@ -75,10 +90,10 @@ func GetStats() (map[string]Stats, error) {
 					Network: network,
 				}
 			}
-			wg.Done()
 		}(i)
 
 	}
+	// wg.WaitAllDone()
 	wg.Wait()
 	statsMap := make(map[string]Stats)
 	for _, s := range statsList {

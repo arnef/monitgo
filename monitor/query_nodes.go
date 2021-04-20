@@ -30,6 +30,7 @@ func GetStatus(nodes []NodeConfig) Data {
 	for i := range nodes {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
 			rawNode, err := queryNode(nodes[i])
 			if err != nil {
 				status[i] = NewStatusError(err.Error())
@@ -37,7 +38,6 @@ func GetStatus(nodes []NodeConfig) Data {
 				raw[i] = *rawNode
 				status[i] = processNode(nodes[i].Host, nodes[i].Name, *rawNode, now)
 			}
-			wg.Done()
 		}(i)
 	}
 	wg.Wait()
@@ -134,6 +134,7 @@ func queryNode(nc NodeConfig) (*node.JsonStats, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	var status node.JsonStats
 
 	err = json.NewDecoder(resp.Body).Decode(&status)

@@ -5,8 +5,8 @@ import (
 )
 
 func (b *Bot) SendAlerts(alerts a.Alerts) {
-	message := b.alertsToMessage(alerts)
-	b.Broadcast(message)
+	raw, html := b.alertsToMessage(alerts)
+	b.Broadcast(raw, html)
 }
 
 func (b *Bot) SaveStatus(alerts a.Alerts) {
