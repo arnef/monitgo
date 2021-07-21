@@ -3,7 +3,7 @@ module git.arnef.de/monitgo
 go 1.15
 
 require (
-	git.arnef.de/arnef/talkbot v1.0.1 // indirect
+	git.arnef.de/arnef/talkbot v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.4.15 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1

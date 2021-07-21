@@ -2,6 +2,8 @@ git.arnef.de/arnef/talkbot v0.0.0-20210302131752-bd4a25fcc5d5 h1:F0OB3cllSPf3+/C
 git.arnef.de/arnef/talkbot v0.0.0-20210302131752-bd4a25fcc5d5/go.mod h1:mv1kOgzU8aw723tShezQew01YZYfJoIYnMxcqr6zYAU=
 git.arnef.de/arnef/talkbot v1.0.1 h1:yPqspN1Tf7UdCqeYEVM9hbxUiTOntT9J7hMLSA8oo5Y=
 git.arnef.de/arnef/talkbot v1.0.1/go.mod h1:mv1kOgzU8aw723tShezQew01YZYfJoIYnMxcqr6zYAU=
+git.arnef.de/arnef/talkbot v1.0.2 h1:lebj3MICfrNJf+zebFjEAxiHo0j0RAu220Mt7fw5dAU=
+git.arnef.de/arnef/talkbot v1.0.2/go.mod h1:mv1kOgzU8aw723tShezQew01YZYfJoIYnMxcqr6zYAU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Microsoft/go-winio v0.4.15 h1:qkLXKzb1QoVatRyd/YlXZ/Kg0m5K3SPuoD82jjSOaBc=
 github.com/Microsoft/go-winio v0.4.15/go.mod h1:tTuCMEN+UleMWgg9dVx4Hu52b1bJo+59jBh3ajtinzw=
