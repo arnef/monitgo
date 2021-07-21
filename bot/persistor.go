@@ -49,7 +49,7 @@ func configFile() (string, error) {
 	dir := path.Join(configDir, "monitgo")
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.Mkdir(dir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return "", err
 		}
 	}
