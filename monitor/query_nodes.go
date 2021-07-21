@@ -33,7 +33,7 @@ func GetStatus(nodes []NodeConfig) Data {
 			defer wg.Done()
 			rawNode, err := queryNode(nodes[i])
 			if err != nil {
-				status[i] = NewStatusError(err.Error())
+				status[i] = NewStatusError(nodes[i].Name, err.Error())
 			} else {
 				raw[i] = *rawNode
 				status[i] = processNode(nodes[i].Host, nodes[i].Name, *rawNode, now)
