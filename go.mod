@@ -17,7 +17,8 @@ require (
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/zenthangplus/goccm v0.0.0-20200608171100-39e9e08b694a // indirect
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d
 	gopkg.in/tucnak/telebot.v2 v2.3.5
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	maunium.net/go/mautrix v0.9.24
 )

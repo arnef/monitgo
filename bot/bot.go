@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	ntb "git.arnef.de/arnef/talkbot/pkg"
@@ -9,12 +10,17 @@ import (
 	"git.arnef.de/monitgo/config"
 	"github.com/hako/durafmt"
 	tb "gopkg.in/tucnak/telebot.v2"
+
+	mb "maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/event"
+	"maunium.net/go/mautrix/id"
 )
 
 type Bot struct {
 	chatIDs   []int64
 	telegram  *tb.Bot
 	talk      *ntb.Bot
+	matrix    *mb.Client
 	config    config.Config
 	startTime time.Time
 	// lastAlerts alerts.Alerts
@@ -24,6 +30,8 @@ type Bot struct {
 func New(config config.Config) Bot {
 	var telegram *tb.Bot
 	var talk *ntb.Bot
+	var matrix *mb.Client
+	var err error
 	if config.Telegram != nil {
 		t, err := tb.NewBot(tb.Settings{
 			Token:  config.Telegram.Token,
@@ -47,10 +55,17 @@ func New(config config.Config) Bot {
 		}
 		talk = t
 	}
+	if config.Matrix != nil {
+		matrix, err = mb.NewClient(config.Matrix.Homeserver, id.UserID(config.Matrix.UserID), config.Matrix.AccessToken)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	bot := Bot{
 		telegram:  telegram,
 		talk:      talk,
+		matrix:    matrix,
 		chatIDs:   []int64{},
 		config:    config,
 		startTime: time.Now(),
@@ -69,6 +84,9 @@ func New(config config.Config) Bot {
 // }
 
 func (b *Bot) Broadcast(raw string, message string) {
+	if len(raw) == 0 {
+		return
+	}
 	if b.telegram != nil {
 		for _, chatID := range b.chatIDs {
 			b.telegram.Send(tb.ChatID(chatID), message, tb.ModeHTML)
@@ -76,6 +94,19 @@ func (b *Bot) Broadcast(raw string, message string) {
 	}
 	if b.talk != nil {
 		b.talk.Send(raw)
+	}
+	if b.matrix != nil {
+		b.matrix.SendMessageEvent(
+			id.RoomID(b.config.Matrix.RoomID),
+			event.EventMessage,
+			map[string]string{
+				"msgtype":        "m.text",
+				"body":           raw,
+				"format":         "org.matrix.custom.html",
+				"formatted_body": strings.ReplaceAll(message, "\n", "<br>"),
+			},
+		)
+
 	}
 
 }
@@ -128,17 +159,65 @@ func (b *Bot) Listen() {
 		b.talk.Handle("status", func(_ ntb.Message) {
 			b.status(nil)
 		})
-		b.talk.Start()
+		go b.talk.Start()
 	}
 
+	if b.matrix != nil {
+		syncer, ok := b.matrix.Syncer.(*mb.DefaultSyncer)
+		if !ok {
+			panic("cannot get default syncer")
+		}
+		fmt.Println("🤖 matrix bot running")
+
+		syncer.OnEventType(event.EventMessage, func(_ mb.EventSource, evt *event.Event) {
+			if evt.RoomID == id.RoomID(b.config.Matrix.RoomID) {
+				msg := evt.Content.AsMessage().Body
+				switch msg {
+				case "/uptime":
+					raw, message := b.uptime()
+					// b.send(nil, uptime)
+					b.matrix.SendMessageEvent(
+						id.RoomID(b.config.Matrix.RoomID),
+						event.EventMessage,
+						map[string]string{
+							"msgtype":        "m.text",
+							"body":           raw,
+							"format":         "org.matrix.custom.html",
+							"formatted_body": strings.ReplaceAll(message, "\n", "<br>"),
+						},
+					)
+				case "/status":
+					b.status(nil)
+				}
+
+			}
+		})
+		defer b.matrix.StopSync()
+		go b.matrix.Sync()
+	}
 }
 
 func (b *Bot) send(msg *tb.Message, message string) {
+	if len(message) == 0 {
+		return
+	}
 	if b.telegram != nil && msg != nil {
 		b.telegram.Send(tb.ChatID(msg.Chat.ID), message, tb.ModeHTML)
 	}
 	if b.talk != nil {
 		b.talk.Send(message)
+	}
+	if b.matrix != nil {
+		b.matrix.SendMessageEvent(
+			id.RoomID(b.config.Matrix.RoomID),
+			event.EventMessage,
+			map[string]string{
+				"msgtype":        "m.text",
+				"body":           message,
+				"format":         "org.matrix.custom.html",
+				"formatted_body": strings.ReplaceAll(message, "\n", "<br>"),
+			},
+		)
 	}
 }
 

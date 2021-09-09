@@ -82,7 +82,7 @@ func main() {
 					am := alerts.AlertManager{}
 					monitor.Register(&am)
 
-					if conf.Telegram != nil || conf.Talk != nil {
+					if conf.Telegram != nil || conf.Talk != nil || conf.Matrix != nil {
 						bot := bot.New(conf)
 						go bot.Listen()
 						am.Register(&bot)
