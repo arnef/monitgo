@@ -13,6 +13,6 @@ func (b *Bot) SaveStatus(alerts a.Alerts) {
 	b.statusAlerts = alerts
 }
 
-func isErrorAlert(alert a.Alert) bool {
-	return alert.State == a.Error || alert.State == a.Down || alert.State == a.Warning
-}
+// func isErrorAlert(alert a.Alert) bool {
+// 	return alert.State == a.Error || alert.State == a.Down || alert.State == a.Warning
+// }

@@ -61,14 +61,14 @@ func New(config config.Config) Bot {
 	return bot
 }
 
-func (b *Bot) isAuthorized(chatID int64) bool {
-	for _, id := range b.chatIDs {
-		if id == chatID {
-			return true
-		}
-	}
-	return false
-}
+// func (b *Bot) isAuthorized(chatID int64) bool {
+// 	for _, id := range b.chatIDs {
+// 		if id == chatID {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func (b *Bot) Broadcast(raw string, message string) {
 	if b.telegram != nil {

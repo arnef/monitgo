@@ -11,8 +11,8 @@ type Status struct {
 	Host      HostStats
 }
 
-func NewStatusError(err string) Status {
-	return Status{Error: &err}
+func NewStatusError(name string, err string) Status {
+	return Status{Error: &err, Name: name}
 }
 
 type HostStats struct {
