@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"git.arnef.de/monitgo/log"
 	"git.arnef.de/monitgo/node/cmd"
+	"git.arnef.de/monitgo/node/host/uptime"
 	"git.arnef.de/monitgo/utils"
 )
 
@@ -49,27 +49,14 @@ func getCPUs() (int, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("Could not get CPUs")
+	return 0, fmt.Errorf("could not get CPUs")
 }
 
 func getLoad() ([]float64, error) {
-	uptime, err := cmd.Exec("uptime")
+	uptimeOut, err := cmd.Exec("uptime")
 	if err != nil {
 		log.Debug(err)
 		return nil, err
 	}
-	load := strings.Split(string(uptime), "load average: ")
-	loads := strings.Split(load[len(load)-1], ", ")
-	vals := make([]float64, len(loads))
-	for i, l := range loads {
-		cleanLoad := strings.TrimSpace(l)
-		cleanLoad = strings.Replace(cleanLoad, ",", ".", 1)
-		parsed, err := strconv.ParseFloat(cleanLoad, 64)
-		if err != nil {
-			log.Debug(err)
-			return nil, err
-		}
-		vals[i] = parsed * 100
-	}
-	return vals, nil
+	return uptime.ParseLoad(string(uptimeOut))
 }

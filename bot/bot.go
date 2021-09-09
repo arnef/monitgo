@@ -22,8 +22,6 @@ type Bot struct {
 }
 
 func New(config config.Config) Bot {
-
-	// api, err := tgbotapi.NewBotAPI(config.Telegram.Token)
 	var telegram *tb.Bot
 	var talk *ntb.Bot
 	if config.Telegram != nil {
