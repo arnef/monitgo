@@ -4,15 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"git.arnef.de/monitgo/alerts"
-	"git.arnef.de/monitgo/bot"
-	"git.arnef.de/monitgo/config"
-	"git.arnef.de/monitgo/database"
-	"git.arnef.de/monitgo/monitor"
-	"git.arnef.de/monitgo/node"
+	"github.com/arnef/monitgo/cmd/node"
+	"github.com/arnef/monitgo/cmd/watch"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-
-	"git.arnef.de/monitgo/log"
 )
 
 func main() {
@@ -20,9 +15,9 @@ func main() {
 	log.SetOutput(os.Stdout)
 
 	err := (&cli.App{
-		Version: "0.2.0",
-		Name:    "monit",
-		Usage:   "Monitoring Docker",
+		Version: "1.0.0",
+		Name:    "monitgo",
+		Usage:   "Monitoring",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "debug",
@@ -32,70 +27,13 @@ func main() {
 		Before: func(ctx *cli.Context) error {
 			if ctx.Bool("debug") {
 				log.SetLevel(log.DebugLevel)
-			} else {
-				log.SetLevel(log.InfoLevel)
+				log.SetReportCaller(true)
 			}
 			return nil
 		},
 		Commands: []*cli.Command{
-			{
-				Name:  "node",
-				Usage: "",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "host",
-						Value: "127.0.0.1",
-					},
-					&cli.UintFlag{
-						Name:  "port",
-						Value: 5000,
-					},
-					&cli.BoolFlag{
-						Name:    "dry-run",
-						Aliases: []string{"d"},
-						Value:   false,
-					},
-				},
-				Action: node.Cmd,
-			},
-			{
-				Name:  "watch",
-				Usage: "",
-				Flags: []cli.Flag{
-					&cli.UintFlag{
-						Name:    "interval",
-						Aliases: []string{"n"},
-						Value:   60,
-						Usage:   "interval in seconds",
-					},
-					&cli.PathFlag{
-						Name:    "config",
-						Aliases: []string{"c"},
-						Value:   "./config.yml",
-					},
-				},
-				Action: func(ctx *cli.Context) error {
-					conf := config.Get(ctx.String("config"))
-
-					monitor.Init(conf.Nodes, ctx.Uint64("interval"))
-
-					am := alerts.AlertManager{}
-					monitor.Register(&am)
-
-					if conf.Telegram != nil || conf.Talk != nil || conf.Matrix != nil {
-						bot := bot.New(conf)
-						go bot.Listen()
-						am.Register(&bot)
-					}
-
-					if conf.InfluxDB != nil {
-						database.Init(*conf.InfluxDB)
-						monitor.Register(conf.InfluxDB)
-					}
-
-					return monitor.Start()
-				},
-			},
+			&node.Command,
+			&watch.Command,
 		},
 	}).Run(os.Args)
 
