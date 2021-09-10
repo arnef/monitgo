@@ -173,7 +173,7 @@ func (b *Bot) Listen() {
 			if evt.RoomID == id.RoomID(b.config.Matrix.RoomID) {
 				msg := evt.Content.AsMessage().Body
 				switch msg {
-				case "/uptime":
+				case "!uptime":
 					raw, message := b.uptime()
 					// b.send(nil, uptime)
 					b.matrix.SendMessageEvent(
@@ -186,7 +186,7 @@ func (b *Bot) Listen() {
 							"formatted_body": strings.ReplaceAll(message, "\n", "<br>"),
 						},
 					)
-				case "/status":
+				case "!status":
 					b.status(nil)
 				}
 
