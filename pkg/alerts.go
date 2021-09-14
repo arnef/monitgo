@@ -7,6 +7,7 @@ type AlertType int
 const (
 	Error           AlertType = 0
 	ErrorResolved   AlertType = 1
+	Started         AlertType = 7
 	Running         AlertType = 2
 	Down            AlertType = 3
 	Away            AlertType = 4

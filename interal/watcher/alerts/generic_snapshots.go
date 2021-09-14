@@ -86,3 +86,6 @@ func (c *genericSnaphot) wentDown(prev *genericSnaphot) bool {
 func (c *genericSnaphot) cameUp(prev *genericSnaphot) bool {
 	return c.MemoryUsage.UsedBytes > 0 && prev != nil && prev.MemoryUsage.UsedBytes == 0
 }
+func (c *genericSnaphot) started(prev *genericSnaphot) bool {
+	return c.MemoryUsage.UsedBytes > 0 && prev == nil
+}

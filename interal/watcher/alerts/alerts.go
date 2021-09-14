@@ -108,6 +108,11 @@ func (a *AlertManager) generateContainer(previous map[string]genericSnaphot, cur
 		if curContainer.cameUp(prevContainer) {
 			alerts.append(pkg.Running, curContainer.Name)
 		}
+		if len(previous) > 0 {
+			if curContainer.started(prevContainer) {
+				alerts.append(pkg.Started, curContainer.Name)
+			}
+		}
 
 	}
 

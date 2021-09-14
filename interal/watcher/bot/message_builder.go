@@ -32,6 +32,8 @@ func BuildMessage(alerts []pkg.Alert) Message {
 					message += fmt.Sprintf("🗑️ <i>%s</i> removed<br>", alert.Message)
 				case pkg.Running:
 					message += fmt.Sprintf("🚀️ <i>%s</i> is up again<br>", alert.Message)
+				case pkg.Started:
+					message += fmt.Sprintf("🚀️ <i>%s</i> is up<br>", alert.Message)
 				case pkg.Error:
 					message += fmt.Sprintf("❗️ %s<br>", alert.Message)
 				case pkg.ErrorResolved:
