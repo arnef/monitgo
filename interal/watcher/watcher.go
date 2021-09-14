@@ -7,6 +7,7 @@ import (
 	"github.com/arnef/monitgo/interal/watcher/alerts"
 	"github.com/arnef/monitgo/interal/watcher/bot"
 	"github.com/arnef/monitgo/interal/watcher/config"
+	"github.com/arnef/monitgo/interal/watcher/database"
 	"github.com/arnef/monitgo/interal/watcher/node"
 	"github.com/arnef/monitgo/pkg"
 	log "github.com/sirupsen/logrus"
@@ -27,8 +28,12 @@ func Start(configPath string, interval int) error {
 		}
 	}
 	log.Debug(watcher.nodes)
-	botManager := bot.NewManager()
+
 	alertManager := alerts.NewManager()
+	watcher.registerSnapshotHandler(alertManager.HandleSnaphsot)
+
+	botManager := bot.NewManager()
+	alertManager.RegisterAlertHandler(botManager.HandleAlerts)
 
 	if cfg.Matrix != nil {
 		botManager.RegisterBot(bot.NewMatrixBot(cfg.Matrix))
@@ -39,11 +44,12 @@ func Start(configPath string, interval int) error {
 	if cfg.Telegram != nil {
 		botManager.RegisterBot(bot.NewTelegramBot(cfg.Telegram))
 	}
-
-	alertManager.RegisterAlertHandler(botManager.HandleAlerts)
-	watcher.registerSnapshotHandler(alertManager.HandleSnaphsot)
-
 	go botManager.Listen()
+
+	if cfg.InfluxDB != nil {
+		watcher.registerSnapshotHandler(database.NewInfluxDB(cfg.InfluxDB).OnSnapshot)
+	}
+
 	return watcher.run(interval)
 }
 

@@ -11,6 +11,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/gomarkdown/markdown v0.0.0-20210820032736-385812cbea76 // indirect
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b // indirect
+	github.com/influxdata/influxdb-client-go/v2 v2.5.0 // indirect
 	github.com/k3a/html2text v1.0.8 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.3.0
