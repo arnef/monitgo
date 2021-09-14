@@ -3,7 +3,7 @@ package node
 import (
 	"strings"
 
-	"github.com/arnef/monitgo/interal/node/api"
+	"github.com/arnef/monitgo/interal/node-exporter/api"
 	"github.com/urfave/cli/v2"
 )
 

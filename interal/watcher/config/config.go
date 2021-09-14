@@ -4,22 +4,21 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/arnef/monitgo/interal/watcher/bot"
+	"github.com/arnef/monitgo/interal/watcher/node"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Nodes []NodeConfig
-}
-
-type NodeConfig struct {
-	Name string
-	Host string
-	Port int
+	Nodes    []node.Node
+	Matrix   *bot.MatrixBotConfig
+	Talk     *bot.TalkBotConfig
+	Telegram *bot.TelegramBotConfig
 }
 
 func FromPath(path string) (*Config, error) {
-	log.Infoln("read in config from %s", path)
+	log.Infof("read in config from %s", path)
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err

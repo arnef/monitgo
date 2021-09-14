@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/arnef/monitgo/interal/node/exec"
+	"github.com/arnef/monitgo/interal/node-exporter/exec"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,7 +37,7 @@ func Start(host string, port int, dockerSocket string, allowedCommands []string)
 			}
 			out, err := exec.Run(string(body), allowedCommands)
 			if err != nil {
-				log.Error(err)
+				log.Error(out, err)
 				if err == exec.ErrCommandNotAllowed {
 					w.WriteHeader(http.StatusMethodNotAllowed)
 				} else {
@@ -47,12 +47,12 @@ func Start(host string, port int, dockerSocket string, allowedCommands []string)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, out)
+			fmt.Fprint(w, string(out))
 			return
 		}
 
-		if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, "/dckr") {
-			requestUri := strings.TrimPrefix(r.RequestURI, "/dckr") + "/"
+		if r.Method == http.MethodGet && r.RequestURI != "/xc" {
+			requestUri := r.RequestURI
 			log.Debugf("%s://%s", dockerSocket, requestUri)
 			resp, err := httpc.Get("http://unix" + requestUri)
 			if err != nil {
