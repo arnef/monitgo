@@ -1,24 +1,22 @@
-module git.arnef.de/monitgo
+module github.com/arnef/monitgo
 
 go 1.15
 
 require (
-	git.arnef.de/arnef/talkbot v1.0.2
-	github.com/Microsoft/go-winio v0.4.15 // indirect
-	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v1.13.1
+	git.arnef.de/arnef/talkbot v1.0.2 // indirect
+	github.com/JohannesKaufmann/html-to-markdown v1.3.0 // indirect
+	github.com/containerd/containerd v1.5.5 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/docker/docker v20.10.8+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
-	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
-	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
-	github.com/influxdata/influxdb-client-go/v2 v2.2.0
-	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/sirupsen/logrus v1.4.1
-	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
+	github.com/gomarkdown/markdown v0.0.0-20210820032736-385812cbea76 // indirect
+	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b // indirect
+	github.com/influxdata/influxdb-client-go/v2 v2.5.0 // indirect
+	github.com/k3a/html2text v1.0.8 // indirect
+	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.3.0
-	github.com/zenthangplus/goccm v0.0.0-20200608171100-39e9e08b694a // indirect
-	golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d
-	gopkg.in/tucnak/telebot.v2 v2.3.5
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	maunium.net/go/mautrix v0.9.24
+	google.golang.org/grpc v1.40.0 // indirect
+	gopkg.in/tucnak/telebot.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	maunium.net/go/mautrix v0.9.24 // indirect
 )
