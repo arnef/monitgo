@@ -2,7 +2,6 @@ package node
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,26 +29,28 @@ func (n *Node) Validate() error {
 		n.Name = fmt.Sprintf("%s:%d", n.Host, n.Port)
 	}
 	if n.CPUs == 0 {
-		out, err := n.Exec("lscpu", "--json")
+		out, err := n.Exec("lscpu")
 		if err != nil {
-			return err
+			log.Error(err)
+			return fmt.Errorf("could not detect cpus on %s. please add it to your config", n.Name)
 		}
-		var data map[string][]map[string]string
-		err = json.Unmarshal(out, &data)
-		if err != nil {
-			return err
-		}
+		for _, line := range strings.Split(string(out), "\n") {
+			if strings.HasPrefix(line, "CPU(s):") {
+				fmt.Println(line)
+				valStr := strings.TrimSpace(strings.Replace(line, "CPU(s):", "", 1))
+				val, err := strconv.Atoi(valStr)
 
-		for _, line := range data["lscpu"] {
-			if line["field"] == "CPU(s):" {
-				val, err := strconv.Atoi(line["data"])
 				if err != nil {
-					log.Debug(err)
+					log.Error(err)
 					return err
 				}
 				n.CPUs = val
 				break
 			}
+		}
+
+		if n.CPUs == 0 {
+			return fmt.Errorf("could not detect cpus on %s. please add it to your config", n.Name)
 		}
 	}
 	return nil
