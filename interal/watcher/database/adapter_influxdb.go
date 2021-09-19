@@ -69,6 +69,9 @@ func (db *influxdb) OnSnapshot(snap []pkg.NodeSnapshot) {
 				// node container points
 
 				for _, container := range node.Container {
+					if container == nil {
+						continue
+					}
 					writeAPI.WritePoint(influxdb2.NewPoint("container", map[string]string{
 						"id":   container.ID,
 						"name": container.Name,
