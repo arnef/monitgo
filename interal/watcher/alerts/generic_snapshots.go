@@ -20,6 +20,7 @@ type GenericSnaphot struct {
 func mapNode2Generic(data []pkg.NodeSnapshot) map[string]GenericSnaphot {
 	dataMap := make(map[string]GenericSnaphot)
 	for _, d := range data {
+		d := d
 		dataMap[d.Name] = GenericSnaphot{
 			Name:        d.Name,
 			Error:       d.Error,
@@ -36,6 +37,7 @@ func mapNode2Generic(data []pkg.NodeSnapshot) map[string]GenericSnaphot {
 func mapContainer2Generic(data []*pkg.ContainerSnapshot) map[string]GenericSnaphot {
 	dataMap := make(map[string]GenericSnaphot)
 	for _, d := range data {
+		d := d
 		if d != nil {
 			dataMap[d.Name] = GenericSnaphot{
 				Name:        d.Name,
