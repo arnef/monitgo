@@ -39,7 +39,7 @@ func (a *AlertManager) generate(previous []pkg.NodeSnapshot, current []pkg.NodeS
 	cur := mapNode2Generic(current)
 	alerts := alertlist{}
 	for name, curNode := range cur {
-		var prevNode *genericSnaphot
+		var prevNode *GenericSnaphot
 
 		if p, ok := prev[name]; ok {
 			prevNode = &p
@@ -70,7 +70,7 @@ func (a *AlertManager) generate(previous []pkg.NodeSnapshot, current []pkg.NodeS
 				alerts.append(pkg.WarningResolved, "High Memory usage")
 			}
 
-			prevC := map[string]genericSnaphot{}
+			prevC := map[string]GenericSnaphot{}
 			if prevNode != nil {
 				for _, n := range previous {
 					if n.Name == prevNode.Name {
@@ -79,7 +79,7 @@ func (a *AlertManager) generate(previous []pkg.NodeSnapshot, current []pkg.NodeS
 					}
 				}
 			}
-			curC := map[string]genericSnaphot{}
+			curC := map[string]GenericSnaphot{}
 			for _, n := range current {
 				if n.Name == curNode.Name {
 					curC = mapContainer2Generic(n.Container)
@@ -93,19 +93,19 @@ func (a *AlertManager) generate(previous []pkg.NodeSnapshot, current []pkg.NodeS
 	return alerts.value
 }
 
-func (a *AlertManager) generateContainer(previous map[string]genericSnaphot, current map[string]genericSnaphot, alerts *alertlist) {
+func (a *AlertManager) generateContainer(previous map[string]GenericSnaphot, current map[string]GenericSnaphot, alerts *alertlist) {
 
 	for id, curContainer := range current {
-		var prevContainer *genericSnaphot
+		var prevContainer *GenericSnaphot
 		if val, ok := previous[id]; ok {
 			prevContainer = &val
 			delete(previous, id)
 		}
 
-		if curContainer.wentDown(prevContainer) {
+		if curContainer.WentDown(prevContainer) {
 			alerts.append(pkg.Down, curContainer.Name)
 		}
-		if curContainer.cameUp(prevContainer) {
+		if curContainer.CameUp(prevContainer) {
 			alerts.append(pkg.Running, curContainer.Name)
 		}
 		if len(previous) > 0 {
