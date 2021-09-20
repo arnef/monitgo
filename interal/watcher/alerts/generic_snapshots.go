@@ -14,11 +14,13 @@ type GenericSnaphot struct {
 	MemoryUsage *pkg.Usage
 	DiskUsage   *pkg.Usage
 	Network     *pkg.Network
+	State       pkg.ContainerStateType
 }
 
 func mapNode2Generic(data []pkg.NodeSnapshot) map[string]GenericSnaphot {
 	dataMap := make(map[string]GenericSnaphot)
 	for _, d := range data {
+		d := d
 		dataMap[d.Name] = GenericSnaphot{
 			Name:        d.Name,
 			Error:       d.Error,
@@ -34,6 +36,7 @@ func mapNode2Generic(data []pkg.NodeSnapshot) map[string]GenericSnaphot {
 func mapContainer2Generic(data []*pkg.ContainerSnapshot) map[string]GenericSnaphot {
 	dataMap := make(map[string]GenericSnaphot)
 	for _, d := range data {
+		d := d
 		if d != nil {
 			dataMap[d.Name] = GenericSnaphot{
 				Name:        d.Name,
@@ -42,6 +45,7 @@ func mapContainer2Generic(data []*pkg.ContainerSnapshot) map[string]GenericSnaph
 				CPU:         d.CPU,
 				MemoryUsage: &d.MemoryUsage,
 				Network:     &d.Network,
+				State:       d.State,
 			}
 		}
 	}
@@ -91,5 +95,5 @@ func (c *GenericSnaphot) started(prev *GenericSnaphot) bool {
 }
 
 func isDown(snap *GenericSnaphot) bool {
-	return snap.MemoryUsage.TotalBytes == 0 && snap.MemoryUsage.UsedBytes == 0
+	return snap.State != pkg.ContainerStateRunning
 }

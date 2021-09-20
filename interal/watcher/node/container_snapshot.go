@@ -64,6 +64,7 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 							TotalRxBytes: rxBytes,
 							TotalTxBytes: txBytes,
 						}
+						cs.State = pkg.ContainerStateType(container.State)
 					}
 				}
 

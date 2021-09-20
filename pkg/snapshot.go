@@ -2,6 +2,18 @@ package pkg
 
 import "time"
 
+type ContainerStateType string
+
+const (
+	ContainerStateCreated    ContainerStateType = "created"
+	ContainerStateRunning    ContainerStateType = "running"
+	ContainerStatePaused     ContainerStateType = "paused"
+	ContainerStateRestarting ContainerStateType = "restarting"
+	ContainerStateRemoving   ContainerStateType = "removing"
+	ContainerStateExisted    ContainerStateType = "exited"
+	ContainerStateDead       ContainerStateType = "dead"
+)
+
 type SnapshotHandler = func(snap []NodeSnapshot)
 
 type Snaphot struct {
@@ -39,4 +51,5 @@ type ContainerSnapshot struct {
 	ID      string
 	Network Network
 	Snaphot
+	State ContainerStateType
 }

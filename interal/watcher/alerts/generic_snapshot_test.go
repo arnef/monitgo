@@ -14,6 +14,7 @@ func TestContainerWentDown(t *testing.T) {
 			TotalBytes: 0,
 			UsedBytes:  0,
 		},
+		State: pkg.ContainerStateDead,
 	}
 
 	if !current.WentDown(nil) {
@@ -25,6 +26,7 @@ func TestContainerWentDown(t *testing.T) {
 			TotalBytes: 0,
 			UsedBytes:  0,
 		},
+		State: pkg.ContainerStateDead,
 	}) {
 		t.Error("Expected not a new alert because container already was down")
 	}
@@ -34,6 +36,7 @@ func TestContainerWentDown(t *testing.T) {
 			TotalBytes: 1,
 			UsedBytes:  0,
 		},
+		State: pkg.ContainerStateRunning,
 	}) {
 		t.Error("Expected current to be down")
 	}
@@ -43,6 +46,7 @@ func TestContainerWentDown(t *testing.T) {
 			TotalBytes: 1,
 			UsedBytes:  1,
 		},
+		State: pkg.ContainerStateRunning,
 	}) {
 		t.Error("Expected current to be down")
 	}
@@ -52,6 +56,7 @@ func TestContainerWentDown(t *testing.T) {
 			TotalBytes: 1,
 			UsedBytes:  0,
 		},
+		State: pkg.ContainerStateRunning,
 	}
 
 	if current.WentDown(nil) {
@@ -66,12 +71,14 @@ func TestContainerCameUp(t *testing.T) {
 			TotalBytes: 1,
 			UsedBytes:  1,
 		},
+		State: pkg.ContainerStateRunning,
 	}
 	if !current.CameUp(&alerts.GenericSnaphot{
 		MemoryUsage: &pkg.Usage{
 			TotalBytes: 0,
 			UsedBytes:  0,
 		},
+		State: pkg.ContainerStateDead,
 	}) {
 		t.Error("current came up")
 	}
@@ -81,6 +88,7 @@ func TestContainerCameUp(t *testing.T) {
 			TotalBytes: 1,
 			UsedBytes:  1,
 		},
+		State: pkg.ContainerStateRunning,
 	}) {
 		t.Error("current does not came up")
 	}
