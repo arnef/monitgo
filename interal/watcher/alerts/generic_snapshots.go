@@ -28,7 +28,6 @@ func mapNode2Generic(data []pkg.NodeSnapshot) map[string]GenericSnaphot {
 			CPU:         d.CPU,
 			MemoryUsage: &d.MemoryUsage,
 			DiskUsage:   &d.DiskUsage,
-			State:       d.State,
 		}
 	}
 	return dataMap

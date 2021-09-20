@@ -22,7 +22,6 @@ type Snaphot struct {
 	Timestamp   time.Time
 	CPU         float64
 	MemoryUsage Usage
-	State       ContainerStateType
 }
 
 type Usage struct {
@@ -52,4 +51,5 @@ type ContainerSnapshot struct {
 	ID      string
 	Network Network
 	Snaphot
+	State ContainerStateType
 }
