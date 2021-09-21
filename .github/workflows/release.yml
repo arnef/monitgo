@@ -1,0 +1,64 @@
+name: Go
+
+on:
+  release:
+    types: [published]
+
+env:
+  CGO_ENABLED: "0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Define tag
+      run: |
+        echo TAG=`echo ${{ github.ref }} | sed "s/refs\/tags\/v//"` >> $GITHUB_ENV
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Build Linux
+      env:
+        GOOS: "linux"
+        GOARCH: "amd64"
+      run: go build -ldflags "-X main.version=${{ env.TAG }}" -o build/monitgo_linux cmd/main.go
+    
+    - name: Build Linux ARM
+      env:
+        GOOS: "linux"
+        GOARCH: "arm"
+      run: go build -ldflags "-X main.version=${{ env.TAG }}" -o build/monitgo_linux_arm cmd/main.go
+    
+    - name: Build Linux ARM64
+      env:
+        GOOS: "linux"
+        GOARCH: "arm64"
+      run: go build -ldflags "-X main.version=${{ env.TAG }}" -o build/monitgo_linux_arm64 cmd/main.go
+    
+    - name: Build Mac
+      env:
+        GOOS: "darwin"
+        GOARCH: "amd64"
+      run: go build -ldflags "-X main.version=${{ env.TAG }}" -o build/monitgo_darwin cmd/main.go
+
+    - name: Build Windows
+      env:
+        GOOS: "windows"
+        GOARCH: "amd64"
+      run: go build -ldflags "-X main.version=${{ env.TAG }}" -o build/monitgo_windows.exe cmd/main.go
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          build/monitgo_linux
+          build/monitgo_linux_arm
+          build/monitgo_linux_arm64
+          build/monitgo_darwin
+          build/monitgo_windows.exe

@@ -10,12 +10,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var version string = "1.0.0"
+
 func main() {
 	/// setup logger
 	log.SetOutput(os.Stdout)
 
 	err := (&cli.App{
-		Version: "1.0.0",
+		Version: version,
 		Name:    "monitgo",
 		Usage:   "Monitoring",
 		Flags: []cli.Flag{
