@@ -62,8 +62,9 @@ func Start(host string, port int, dockerSocket string, allowedCommands []string)
 				return
 			}
 			w.WriteHeader(resp.StatusCode)
-			defer resp.Body.Close()
 			io.Copy(w, resp.Body)
+			resp.Body.Close()
+
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
