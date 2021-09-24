@@ -10,7 +10,10 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
+const MAX_ROUTINES = 10
+
 func (n *Node) container(snapshot *pkg.NodeSnapshot) {
+	sem := make(chan int, MAX_ROUTINES)
 
 	client, err := n.DockerClient()
 	if err != nil {
@@ -28,6 +31,8 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 	snapshot.Container = make([]*pkg.ContainerSnapshot, len(containerList))
 	wg := sync.WaitGroup{}
 	for i := range containerList {
+		// Blocks if MAX_ROUTINES reached
+		sem <- 1
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -70,6 +75,8 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 
 				snapshot.Container[i] = &cs
 			}
+			// makes place for new action
+			<-sem
 		}(i)
 	}
 	wg.Wait()
