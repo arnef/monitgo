@@ -1,6 +1,8 @@
 package alerts
 
 import (
+	"fmt"
+
 	"github.com/arnef/monitgo/pkg"
 )
 
@@ -102,18 +104,21 @@ func (a *AlertManager) generateContainer(previous map[string]GenericSnaphot, cur
 			delete(previous, id)
 		}
 
-		if curContainer.WentDown(prevContainer) {
-			alerts.append(pkg.Down, curContainer.Name)
-		}
-		if curContainer.CameUp(prevContainer) {
-			alerts.append(pkg.Running, curContainer.Name)
-		}
-		if len(previous) > 0 {
-			if curContainer.started(prevContainer) {
-				alerts.append(pkg.Started, curContainer.Name)
+		if curContainer.errorOccurred(prevContainer) {
+			alerts.append(pkg.Error, fmt.Sprintf("[%s] %s", curContainer.Name, curContainer.Error))
+		} else {
+			if curContainer.errorResolved(prevContainer) {
+				alerts.append(pkg.ErrorResolved, fmt.Sprintf("[%s] %s", curContainer.Name, prevContainer.Error))
+			} else if curContainer.WentDown(prevContainer) {
+				alerts.append(pkg.Down, curContainer.Name)
+			} else if curContainer.CameUp(prevContainer) {
+				alerts.append(pkg.Running, curContainer.Name)
+			} else if len(previous) > 0 {
+				if curContainer.started(prevContainer) {
+					alerts.append(pkg.Started, curContainer.Name)
+				}
 			}
 		}
-
 	}
 
 	for _, deleted := range previous {

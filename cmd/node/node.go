@@ -33,5 +33,6 @@ var Command = cli.Command{
 
 func Action(c *cli.Context) error {
 
-	return api.Start(c.String("host"), c.Int("port"), c.Path("docker"), strings.Split(c.String("allowed"), ","))
+	a := api.New(c.String("host"), c.Int("port"), c.Path("docker"), strings.Split(c.String("allowed"), ","))
+	return a.Start()
 }

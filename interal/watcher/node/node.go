@@ -36,7 +36,6 @@ func (n *Node) Validate() error {
 		}
 		for _, line := range strings.Split(string(out), "\n") {
 			if strings.HasPrefix(line, "CPU(s):") {
-				fmt.Println(line)
 				valStr := strings.TrimSpace(strings.Replace(line, "CPU(s):", "", 1))
 				val, err := strconv.Atoi(valStr)
 

@@ -8,18 +8,42 @@ import (
 
 	"github.com/arnef/monitgo/pkg"
 	"github.com/docker/docker/api/types"
+	log "github.com/sirupsen/logrus"
 )
+
+func (n *Node) getContainerList() ([]types.Container, error) {
+	ctx := context.Background()
+	client, err := n.DockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+	return client.ContainerList(ctx, types.ContainerListOptions{All: true})
+}
+
+func (n *Node) getContainerStats(id string) (*types.StatsJSON, error) {
+	ctx := context.Background()
+	client, err := n.DockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	resp, err := client.ContainerStats(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var stats types.StatsJSON
+	err = json.NewDecoder(resp.Body).Decode(&stats)
+
+	return &stats, err
+}
 
 func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 
-	client, err := n.DockerClient()
-	if err != nil {
-		snapshot.Error = err
-		return
-	}
-	defer client.Close()
-	ctx := context.Background()
-	containerList, err := client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	containerList, err := n.getContainerList()
+	log.Debug(containerList, err)
 	if err != nil {
 		snapshot.Error = err
 		return
@@ -38,34 +62,30 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 				cs.ID = container.ID
 				cs.Name = strings.TrimPrefix(strings.Join(container.Names, ","), "/")
 
-				resp, err := client.ContainerStats(ctx, container.ID, false)
+				stats, err := n.getContainerStats(container.ID)
+				log.Debug(stats, err)
 				if err != nil {
 					cs.Error = err
 				} else {
-					var stats types.StatsJSON
-					err = json.NewDecoder(resp.Body).Decode(&stats)
-					if err != nil {
-						cs.Error = err
-					} else {
-						cs.MemoryUsage = pkg.Usage{
-							TotalBytes: stats.MemoryStats.MaxUsage,
-							UsedBytes:  stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
-						}
-						cs.CPU = calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, &stats)
-
-						var rxBytes uint64
-						var txBytes uint64
-
-						for _, net := range stats.Networks {
-							rxBytes += net.RxBytes
-							txBytes += net.TxBytes
-						}
-						cs.Network = pkg.Network{
-							TotalRxBytes: rxBytes,
-							TotalTxBytes: txBytes,
-						}
-						cs.State = pkg.ContainerStateType(container.State)
+					cs.MemoryUsage = pkg.Usage{
+						TotalBytes: stats.MemoryStats.MaxUsage,
+						UsedBytes:  stats.MemoryStats.Usage - stats.MemoryStats.Stats["cache"],
 					}
+					cs.CPU = calculateCPUPercentUnix(stats.PreCPUStats.CPUUsage.TotalUsage, stats.PreCPUStats.SystemUsage, stats)
+
+					var rxBytes uint64
+					var txBytes uint64
+
+					for _, net := range stats.Networks {
+						rxBytes += net.RxBytes
+						txBytes += net.TxBytes
+					}
+					cs.Network = pkg.Network{
+						TotalRxBytes: rxBytes,
+						TotalTxBytes: txBytes,
+					}
+					cs.State = pkg.ContainerStateType(container.State)
+
 				}
 
 				snapshot.Container[i] = &cs
