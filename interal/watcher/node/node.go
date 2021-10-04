@@ -21,6 +21,8 @@ type Node struct {
 	NoDocker         bool
 }
 
+var clients = map[string]*client.Client{}
+
 func (n *Node) Validate() error {
 	if n.Port == 0 {
 		n.Port = 5000
@@ -36,7 +38,6 @@ func (n *Node) Validate() error {
 		}
 		for _, line := range strings.Split(string(out), "\n") {
 			if strings.HasPrefix(line, "CPU(s):") {
-				fmt.Println(line)
 				valStr := strings.TrimSpace(strings.Replace(line, "CPU(s):", "", 1))
 				val, err := strconv.Atoi(valStr)
 
@@ -80,4 +81,19 @@ func (n *Node) DockerClient() (*client.Client, error) {
 	// }
 	// return n.client, err
 	return client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
+}
+
+func CurrentClient(n *Node) (*client.Client, error) {
+	if c, exists := clients[n.Name]; exists {
+		return c, nil
+	}
+
+	c, err := n.DockerClient()
+	if err != nil {
+		return nil, err
+	}
+
+	clients[n.Name] = c
+
+	return c, nil
 }
