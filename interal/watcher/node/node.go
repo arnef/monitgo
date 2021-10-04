@@ -2,6 +2,7 @@ package node
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -83,9 +84,13 @@ func (n *Node) DockerClient() (*client.Client, error) {
 	return client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
 }
 
-func CurrentClient(n *Node) (*client.Client, error) {
+func CurrentClient(n *Node, ctx context.Context) (*client.Client, error) {
 	if c, exists := clients[n.Name]; exists {
-		return c, nil
+		_, err := c.Ping(ctx)
+		if err == nil {
+			return c, nil
+		}
+		c.Close()
 	}
 
 	c, err := n.DockerClient()
