@@ -10,6 +10,7 @@ import (
 
 type Api struct {
 	dockerSocket    string
+	dockerClient    *http.Client
 	host            string
 	port            int
 	allowedCommands []string

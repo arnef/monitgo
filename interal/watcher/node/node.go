@@ -90,6 +90,7 @@ func CurrentClient(n *Node, ctx context.Context) (*client.Client, error) {
 		if err == nil {
 			return c, nil
 		}
+		fmt.Printf("connection broken: %s, %v\n", n.Name, err)
 		c.Close()
 	}
 
