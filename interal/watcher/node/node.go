@@ -75,26 +75,22 @@ func (n *Node) Exec(command string, args ...string) ([]byte, error) {
 	return out.Bytes(), err
 }
 
-func (n *Node) DockerClient() (*client.Client, error) {
+func (n *Node) DockerClient(ctx context.Context) (*client.Client, error) {
 	// var err error
 	// if n.client == nil {
 	// 	n.client, err = client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
 	// }
 	// return n.client, err
-	return client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
-}
-
-func CurrentClient(n *Node, ctx context.Context) (*client.Client, error) {
 	if c, exists := clients[n.Name]; exists {
 		_, err := c.Ping(ctx)
 		if err == nil {
 			return c, nil
 		}
-		fmt.Printf("connection broken: %s, %v\n", n.Name, err)
+		log.Errorf("connection broken: %s, %v\n", n.Name, err)
 		c.Close()
 	}
 
-	c, err := n.DockerClient()
+	c, err := client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -14,7 +14,7 @@ import (
 const MAX_ROUTINES = 10
 
 func (n *Node) getContainerList(ctx context.Context) ([]types.Container, error) {
-	client, err := CurrentClient(n, ctx)
+	client, err := n.DockerClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func (n *Node) getContainerList(ctx context.Context) ([]types.Container, error) 
 }
 
 func (n *Node) getContainerStats(id string, ctx context.Context) (*types.StatsJSON, error) {
-	client, err := CurrentClient(n, ctx)
+	client, err := n.DockerClient(ctx)
 	if err != nil {
 		return nil, err
 	}

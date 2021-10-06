@@ -26,7 +26,7 @@ func (a *Api) HandleDocker(w http.ResponseWriter, r *http.Request) {
 	log.Debugf("%s://%s", a.dockerSocket, requestUri)
 	resp, err := a.dockerClient.Get("http://unix" + requestUri)
 	if err != nil {
-		log.Error(err)
+		log.Error(err, ", ", a.host)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, err)
 		a.dockerClient = nil
