@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,6 +20,7 @@ func (a *Api) HandleDocker(w http.ResponseWriter, r *http.Request) {
 					return net.Dial("unix", a.dockerSocket)
 				},
 			},
+			Timeout: time.Minute * 3,
 		}
 	}
 
@@ -32,7 +34,7 @@ func (a *Api) HandleDocker(w http.ResponseWriter, r *http.Request) {
 		a.dockerClient = nil
 		return
 	}
-	defer resp.Body.Close()
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
+	resp.Body.Close()
 }
