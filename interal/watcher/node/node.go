@@ -76,11 +76,6 @@ func (n *Node) Exec(command string, args ...string) ([]byte, error) {
 }
 
 func (n *Node) DockerClient(ctx context.Context) (*client.Client, error) {
-	// var err error
-	// if n.client == nil {
-	// 	n.client, err = client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
-	// }
-	// return n.client, err
 	if c, exists := clients[n.Name]; exists {
 		_, err := c.Ping(ctx)
 		if err == nil {
