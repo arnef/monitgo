@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -69,10 +69,9 @@ func (n *Node) Exec(command string, args ...string) ([]byte, error) {
 		return nil, err
 	}
 
-	out := bytes.Buffer{}
-	defer resp.Body.Close()
-	_, err = io.Copy(&out, resp.Body)
-	return out.Bytes(), err
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	return body, err
 }
 
 func (n *Node) DockerClient(ctx context.Context) (*client.Client, error) {

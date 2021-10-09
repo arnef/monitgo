@@ -33,6 +33,7 @@ func (n *Node) getContainerStats(id string, ctx context.Context) (*types.StatsJS
 
 	var stats types.StatsJSON
 	err = json.NewDecoder(resp.Body).Decode(&stats)
+	resp.Body.Close()
 
 	return &stats, err
 }
