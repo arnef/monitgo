@@ -11,8 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const MAX_ROUTINES = 10
-
 func (n *Node) getContainerList(ctx context.Context) ([]types.Container, error) {
 	client, err := n.DockerClient(ctx)
 	if err != nil {
@@ -39,7 +37,6 @@ func (n *Node) getContainerStats(id string, ctx context.Context) (*types.StatsJS
 }
 
 func (n *Node) container(snapshot *pkg.NodeSnapshot) {
-	sem := make(chan int, MAX_ROUTINES)
 	ctx := context.Background()
 	containerList, err := n.getContainerList(ctx)
 	log.Debug(containerList, err)
@@ -51,8 +48,6 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 	snapshot.Container = make([]*pkg.ContainerSnapshot, len(containerList))
 	wg := sync.WaitGroup{}
 	for i := range containerList {
-		// Blocks if MAX_ROUTINES reached
-		sem <- 1
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -91,8 +86,6 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 
 				snapshot.Container[i] = &cs
 			}
-			// makes place for new action
-			<-sem
 		}(i)
 	}
 	wg.Wait()
