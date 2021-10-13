@@ -11,24 +11,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (n *Node) getContainerList() ([]types.Container, error) {
-	ctx := context.Background()
-	client, err := n.DockerClient()
+func (n *Node) getContainerList(ctx context.Context) ([]types.Container, error) {
+	client, err := n.DockerClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
 	return client.ContainerList(ctx, types.ContainerListOptions{All: true})
 }
 
-func (n *Node) getContainerStats(id string) (*types.StatsJSON, error) {
-	ctx := context.Background()
-	client, err := n.DockerClient()
+func (n *Node) getContainerStats(id string, ctx context.Context) (*types.StatsJSON, error) {
+	client, err := n.DockerClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
-
 	resp, err := client.ContainerStats(ctx, id, false)
 	if err != nil {
 		return nil, err
@@ -36,13 +31,14 @@ func (n *Node) getContainerStats(id string) (*types.StatsJSON, error) {
 
 	var stats types.StatsJSON
 	err = json.NewDecoder(resp.Body).Decode(&stats)
+	resp.Body.Close()
 
 	return &stats, err
 }
 
 func (n *Node) container(snapshot *pkg.NodeSnapshot) {
-
-	containerList, err := n.getContainerList()
+	ctx := context.Background()
+	containerList, err := n.getContainerList(ctx)
 	log.Debug(containerList, err)
 	if err != nil {
 		snapshot.Error = err
@@ -62,7 +58,7 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 				cs.ID = container.ID
 				cs.Name = strings.TrimPrefix(strings.Join(container.Names, ","), "/")
 
-				stats, err := n.getContainerStats(container.ID)
+				stats, err := n.getContainerStats(container.ID, ctx)
 				log.Debug(stats, err)
 				if err != nil {
 					cs.Error = err

@@ -14,6 +14,7 @@ import (
 
 func (a *Api) HandleExec(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
+	r.Body.Close()
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
