@@ -5,3 +5,6 @@ linux:
 
 arm:
 	GOOS=linux GOARCH=arm go build -o build/monitgo_arm main.go
+
+test:
+	go test -v ./...

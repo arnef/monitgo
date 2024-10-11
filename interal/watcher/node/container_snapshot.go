@@ -8,6 +8,7 @@ import (
 
 	"github.com/arnef/monitgo/pkg"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +17,7 @@ func (n *Node) getContainerList(ctx context.Context) ([]types.Container, error) 
 	if err != nil {
 		return nil, err
 	}
-	return client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	return client.ContainerList(ctx, container.ListOptions{All: true})
 }
 
 func (n *Node) getContainerStats(id string, ctx context.Context) (*types.StatsJSON, error) {
@@ -92,7 +93,7 @@ func (n *Node) container(snapshot *pkg.NodeSnapshot) {
 
 }
 
-func calculateCPUPercentUnix(previousCPU, previousSystem uint64, v *types.StatsJSON) float64 {
+func calculateCPUPercentUnix(previousCPU, previousSystem uint64, v *container.StatsResponse) float64 {
 	var (
 		cpuPercent = 0.0
 		// calculate the change for the cpu usage of the container in between readings

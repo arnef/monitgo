@@ -61,25 +61,31 @@ func (c *GenericSnaphot) errorResolved(prev *GenericSnaphot) bool {
 	return c.Error == nil && prev != nil && prev.Error != nil
 }
 
-func (c *GenericSnaphot) highDiskUsageOccurred(prev *GenericSnaphot) bool {
-	return c.DiskUsage.Percentage() > 80 && (prev == nil || prev.DiskUsage.Percentage() <= 80)
+func (c *GenericSnaphot) highDiskUsageOccurred(prev *GenericSnaphot, diskUsageDiskUsage float64) bool {
+	return c.DiskUsage.Percentage() > diskUsageDiskUsage &&
+		(prev == nil || prev.DiskUsage.Percentage() <= diskUsageDiskUsage)
 }
-func (c *GenericSnaphot) highDiskUsageResolved(prev *GenericSnaphot) bool {
-	return c.DiskUsage.Percentage() <= 80 && prev != nil && prev.DiskUsage.Percentage() > 80
-}
-
-func (c *GenericSnaphot) highMemoryUsageOccurred(prev *GenericSnaphot) bool {
-	return c.MemoryUsage.Percentage() > 80 && (prev == nil || prev.MemoryUsage.Percentage() <= 80)
-}
-func (c *GenericSnaphot) highMemoryUsageResolved(prev *GenericSnaphot) bool {
-	return c.MemoryUsage.Percentage() <= 80 && prev != nil && prev.MemoryUsage.Percentage() > 80
+func (c *GenericSnaphot) highDiskUsageResolved(prev *GenericSnaphot, diskUsageDiskUsage float64) bool {
+	return c.DiskUsage.Percentage() <= diskUsageDiskUsage &&
+		prev != nil && prev.DiskUsage.Percentage() > diskUsageDiskUsage
 }
 
-func (c *GenericSnaphot) highCPUUsageOccurred(prev *GenericSnaphot) bool {
-	return c.CPU > 80 && (prev == nil || prev.CPU <= 80)
+func (c *GenericSnaphot) highMemoryUsageOccurred(prev *GenericSnaphot, memoryUsageThreshold float64) bool {
+	return c.MemoryUsage.Percentage() > memoryUsageThreshold &&
+		(prev == nil || prev.MemoryUsage.Percentage() <= memoryUsageThreshold)
 }
-func (c *GenericSnaphot) highCPUUsageResolved(prev *GenericSnaphot) bool {
-	return c.CPU <= 80 && prev != nil && prev.CPU > 80
+func (c *GenericSnaphot) highMemoryUsageResolved(prev *GenericSnaphot, memoryUsageThreshold float64) bool {
+	return c.MemoryUsage.Percentage() <= memoryUsageThreshold &&
+		prev != nil && prev.MemoryUsage.Percentage() > memoryUsageThreshold
+}
+
+func (c *GenericSnaphot) highCPUUsageOccurred(prev *GenericSnaphot, cpuUsageDiskUsage float64) bool {
+	return c.CPU > cpuUsageDiskUsage &&
+		(prev == nil || prev.CPU <= cpuUsageDiskUsage)
+}
+func (c *GenericSnaphot) highCPUUsageResolved(prev *GenericSnaphot, cpuUsageDiskUsage float64) bool {
+	return c.CPU <= cpuUsageDiskUsage &&
+		prev != nil && prev.CPU > cpuUsageDiskUsage
 }
 
 // container stuff

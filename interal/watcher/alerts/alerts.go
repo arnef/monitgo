@@ -3,16 +3,24 @@ package alerts
 import (
 	"fmt"
 
+	"github.com/arnef/monitgo/interal/watcher/config"
 	"github.com/arnef/monitgo/pkg"
 )
 
 type AlertManager struct {
 	previous []pkg.NodeSnapshot
 	handler  []pkg.AlertHandler
+	config   *config.Config
 }
 
-func NewManager() *AlertManager {
-	return &AlertManager{}
+func NewManager(config *config.Config) *AlertManager {
+	if config == nil {
+		panic("config needed")
+	}
+
+	return &AlertManager{
+		config: config,
+	}
 }
 
 func (a *AlertManager) RegisterAlertHandler(handler pkg.AlertHandler) {
@@ -53,22 +61,22 @@ func (a *AlertManager) generate(previous []pkg.NodeSnapshot, current []pkg.NodeS
 			if curNode.errorResolved(prevNode) {
 				alerts.append(pkg.ErrorResolved, prevNode.Error.Error())
 			}
-			if curNode.highCPUUsageOccurred(prevNode) {
+			if curNode.highCPUUsageOccurred(prevNode, *a.config.CPUUsageThreshold) {
 				alerts.append(pkg.Warning, "High CPU usage")
 			}
-			if curNode.highCPUUsageResolved(prevNode) {
+			if curNode.highCPUUsageResolved(prevNode, *a.config.CPUUsageThreshold) {
 				alerts.append(pkg.WarningResolved, "High CPU usage")
 			}
-			if curNode.highDiskUsageOccurred(prevNode) {
+			if curNode.highDiskUsageOccurred(prevNode, *a.config.DiskUsageDiskUsage) {
 				alerts.append(pkg.Warning, "High Disk Usage")
 			}
-			if curNode.highDiskUsageResolved(prevNode) {
+			if curNode.highDiskUsageResolved(prevNode, *a.config.DiskUsageDiskUsage) {
 				alerts.append(pkg.WarningResolved, "High Disk Usage")
 			}
-			if curNode.highMemoryUsageOccurred(prevNode) {
+			if curNode.highMemoryUsageOccurred(prevNode, *a.config.MemoryUsageThreshold) {
 				alerts.append(pkg.Warning, "High Memory usage")
 			}
-			if curNode.highMemoryUsageResolved(prevNode) {
+			if curNode.highMemoryUsageResolved(prevNode, *a.config.MemoryUsageThreshold) {
 				alerts.append(pkg.WarningResolved, "High Memory usage")
 			}
 

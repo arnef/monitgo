@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -35,7 +36,7 @@ type matrixbot struct {
 
 func (m *matrixbot) Send(msg Message) {
 	if m.client != nil {
-		_, err := m.client.SendMessageEvent(m.room, event.EventMessage, map[string]string{
+		_, err := m.client.SendMessageEvent(context.Background(), m.room, event.EventMessage, map[string]string{
 			"msgtype":        "m.text",
 			"body":           msg.Plain,
 			"format":         "org.matrix.custom.html",
@@ -53,7 +54,7 @@ func (m *matrixbot) Listen(commandHandler CommandHandler) {
 	if m.client != nil {
 		syncer, ok := m.client.Syncer.(*mautrix.DefaultSyncer)
 		if ok {
-			syncer.OnEventType(event.EventMessage, func(_ mautrix.EventSource, evt *event.Event) {
+			syncer.OnEventType(event.EventMessage, func(_ context.Context, evt *event.Event) {
 				if evt.RoomID == m.room && evt.Timestamp > startTime {
 					switch evt.Content.AsMessage().Body {
 					case "!uptime":
