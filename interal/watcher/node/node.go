@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,12 +14,15 @@ import (
 )
 
 type Node struct {
-	Name             string
-	Port             int
-	Host             string
-	DockerAPIVersion string
-	CPUs             int
-	NoDocker         bool
+	Name                 string
+	Port                 int
+	Host                 string
+	DockerAPIVersion     string
+	CPUs                 int
+	NoDocker             bool
+	CPUUsageDiskUsage    uint64
+	MemoryUsageThreshold uint64
+	DiskUsageDiskUsage   uint64
 }
 
 var clients = map[string]*client.Client{}
@@ -69,7 +72,7 @@ func (n *Node) Exec(command string, args ...string) ([]byte, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	return body, err
 }
@@ -84,7 +87,7 @@ func (n *Node) DockerClient(ctx context.Context) (*client.Client, error) {
 		c.Close()
 	}
 
-	c, err := client.NewClient(fmt.Sprintf("http://%s:%d", n.Host, n.Port), n.DockerAPIVersion, nil, nil)
+	c, err := client.NewClientWithOpts(client.FromEnv, client.WithHost(fmt.Sprintf("http://%s:%d", n.Host, n.Port)))
 	if err != nil {
 		return nil, err
 	}

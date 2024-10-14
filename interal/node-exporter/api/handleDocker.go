@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"time"
@@ -34,7 +34,7 @@ func (a *Api) HandleDocker(w http.ResponseWriter, r *http.Request) {
 		a.dockerClient = nil
 		return
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

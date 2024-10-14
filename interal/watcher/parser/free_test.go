@@ -22,4 +22,18 @@ func TestParserFree(t *testing.T) {
 	if used != 3031846912 {
 		t.Errorf("expected used bytes to be 3031846912 but got %d", used)
 	}
+
+	in = `           0           0           0
+	`
+
+	total, used, err = parser.Free(in)
+	if err == nil {
+		t.Errorf("expected error but got %v", err)
+	}
+	if total != 0 {
+		t.Errorf("expected total bytes to be 16451350528 but got %d", total)
+	}
+	if used != 0 {
+		t.Errorf("expected used bytes to be 3031846912 but got %d", used)
+	}
 }

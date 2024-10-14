@@ -19,6 +19,10 @@ var Command = cli.Command{
 			Name:  "port",
 			Value: 5000,
 		},
+		&cli.UintFlag{
+			Name:  "port",
+			Value: 5000,
+		},
 		&cli.PathFlag{
 			Name:  "docker",
 			Value: "/var/run/docker.sock",
