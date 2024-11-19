@@ -29,7 +29,7 @@ func Start(configPath string, interval int) error {
 	}
 	log.Debug(watcher.nodes)
 
-	alertManager := alerts.NewManager()
+	alertManager := alerts.NewManager(cfg)
 	watcher.registerSnapshotHandler(alertManager.HandleSnaphsot)
 
 	botManager := bot.NewManager()
@@ -37,9 +37,6 @@ func Start(configPath string, interval int) error {
 
 	if cfg.Matrix != nil {
 		botManager.RegisterBot(bot.NewMatrixBot(cfg.Matrix))
-	}
-	if cfg.Talk != nil {
-		botManager.RegisterBot(bot.NewTalkBot(cfg.Talk))
 	}
 	if cfg.Telegram != nil {
 		botManager.RegisterBot(bot.NewTelegramBot(cfg.Telegram))
